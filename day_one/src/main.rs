@@ -20,8 +20,7 @@ fn main() {
     let simularity = calculate_simularity(&parsed_input);
 
     // Record the amount of time it took to run the program
-    let end = std::time::Instant::now();
-    println!("Time elapsed: {:?}", end - start);
+    println!("Time elapsed: {:?}", start.elapsed());
 
     println!("Calculated distance: {distance}");
     println!("Similarity value: {simularity}");
@@ -35,10 +34,10 @@ fn parse_aoc_input() -> InputNumbers {
             list_two_counted_occurances: HashMap::new(),
         },
         |mut parsed, line| {
-            let left = line[0..=4].parse::<i32>().unwrap();
+            let left = line[..5].parse::<i32>().unwrap();
             parsed.list_one_numbers.push(left);
 
-            let right = line[8..=12].parse::<i32>().unwrap();
+            let right = line[8..].parse::<i32>().unwrap();
             parsed.list_two_numbers.push(right);
 
             parsed
