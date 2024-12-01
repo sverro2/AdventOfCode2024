@@ -13,7 +13,6 @@ fn main() {
     let parsed_input = fs::read_to_string("day_one/input.txt")
         .unwrap()
         .lines()
-        .into_iter()
         .fold(
             InputNumbers {
                 left_numbers: vec![],
