@@ -2,7 +2,6 @@ use std::collections::HashMap;
 
 // Using Winnow parser in the future?
 
-#[derive(Clone)]
 struct InputNumbers {
     list_one_numbers: Vec<i32>,
     list_two_numbers: Vec<i32>,
@@ -12,14 +11,13 @@ struct InputNumbers {
 fn main() {
     let start = std::time::Instant::now();
 
-    // print string line by line for file "input.txt"
     let parsed_input = parse_aoc_input();
 
     // First star
-    let distance = calculate_distance(parsed_input.to_owned());
+    let distance = calculate_distance(&parsed_input);
 
     // Second star
-    let simularity = calculate_simularity(parsed_input);
+    let simularity = calculate_simularity(&parsed_input);
 
     // Record the amount of time it took to run the program
     let end = std::time::Instant::now();
@@ -59,18 +57,18 @@ fn parse_aoc_input() -> InputNumbers {
     parsed_input
 }
 
-fn calculate_distance(input: InputNumbers) -> i32 {
+fn calculate_distance(input: &InputNumbers) -> i32 {
     let total_difference: i32 = input
         .list_one_numbers
         .iter()
-        .zip(input.list_two_numbers)
+        .zip(&input.list_two_numbers)
         .map(|(a, b)| i32::abs(a - b))
         .sum();
 
     total_difference
 }
 
-fn calculate_simularity(input: InputNumbers) -> i32 {
+fn calculate_simularity(input: &InputNumbers) -> i32 {
     let score: i32 = input
         .list_one_numbers
         .iter()
