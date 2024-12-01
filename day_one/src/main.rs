@@ -53,15 +53,19 @@ fn calculate_distance(mut input: InputNumbers) {
 }
 
 fn calculate_simularity(input: InputNumbers) {
-    let score = input.left_numbers.iter().fold(0, |total, left_number| {
-        let encounters_in_right = input
-            .right_numbers
-            .iter()
-            .filter(|right_number| left_number == *right_number)
-            .count();
+    let score: i32 = input
+        .left_numbers
+        .iter()
+        .map(|left_number| {
+            let encounters_in_right = input
+                .right_numbers
+                .iter()
+                .filter(|right_number| left_number == *right_number)
+                .count();
 
-        total + (left_number * encounters_in_right as i32)
-    });
+            left_number * encounters_in_right as i32
+        })
+        .sum();
 
     println!("Score: {}", score);
 }
