@@ -1,6 +1,7 @@
 [workspace]
 
 members = ["day_one", "day_two"]
+resolver = "2"
 
 [workspace.dependencies]
 serde = { version = "1.0.215", features = ["derive"] }
