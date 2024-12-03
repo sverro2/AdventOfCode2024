@@ -70,7 +70,7 @@ fn exercise_2() {
     // Depending where an multiplier call is located, we want to toggle the multiplier on or off.
     let toggles = MultiplierToggles::from_str(input).unwrap();
 
-    let all_multiplecations_sum: i32 = valid_multiplier_calls
+    let all_multiplications_sum: i32 = valid_multiplier_calls
         .captures_iter(input)
         .filter_map(|captured| {
             let index_of_capture = captured.get(0).map(|i| (i.start())).unwrap();
@@ -90,7 +90,7 @@ fn exercise_2() {
             }
         })
         .sum();
-    println!("{all_multiplecations_sum}");
+    println!("{all_multiplications_sum}");
 }
 
 #[derive(Debug)]
