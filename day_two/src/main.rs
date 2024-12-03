@@ -18,17 +18,17 @@ enum ReportType {
 }
 
 fn excercise_1(input: &str) -> usize {
-    let amount_of_safe_inputs = input
+    let amount_of_safe_reports = input
         .lines()
         .filter(|line| {
-            let numbers_in_line: Vec<i32> = line
+            let levels_in_line: Vec<i32> = line
                 .split_ascii_whitespace()
                 .map(|i| i.parse().unwrap())
                 .collect();
 
             let mut type_of_report = None;
-            let found_any_unsafe = numbers_in_line.windows(2).any(|slice| {
-                let latest_delta_kind = if slice[0] < slice[1] {
+            let found_any_unsafe = levels_in_line.windows(2).any(|slice| {
+                let latest_delta_type = if slice[0] < slice[1] {
                     Some(ReportType::Increasing)
                 } else {
                     Some(ReportType::Decreasing)
@@ -36,11 +36,11 @@ fn excercise_1(input: &str) -> usize {
 
                 // If type of report is known, it can not change anymore
                 if type_of_report.is_some() {
-                    if type_of_report != latest_delta_kind {
+                    if type_of_report != latest_delta_type {
                         return true;
                     }
                 } else {
-                    type_of_report = latest_delta_kind;
+                    type_of_report = latest_delta_type;
                 }
 
                 // Also check if delta is within acceptable margins
@@ -56,7 +56,7 @@ fn excercise_1(input: &str) -> usize {
         })
         .count();
 
-    amount_of_safe_inputs
+    amount_of_safe_reports
 }
 
 fn excercise_2(input: &str) -> usize {
@@ -71,6 +71,7 @@ fn excercise_2(input: &str) -> usize {
             let index_with_error = safety_of_report(&numbers_in_list);
 
             if let Some(index) = index_with_error {
+                // Problem can be found with reported index or the index after it
                 let mut left_value_removed_list = numbers_in_list;
                 let mut right_value_removed_list = left_value_removed_list.clone();
                 left_value_removed_list.remove(index);
