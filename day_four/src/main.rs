@@ -6,6 +6,11 @@ fn main() {
         .map(|f| f.chars().collect::<Vec<char>>())
         .collect::<Vec<_>>();
 
+    part_one(&input);
+    part_two(&input);
+}
+
+fn part_one(input: &Vec<Vec<char>>) {
     let possible_headings = vec![
         Heading { x: 0, y: -1 },
         Heading { x: 1, y: -1 },
@@ -55,11 +60,67 @@ fn main() {
     println!("Total XMAS count: {}", total_xmas_count);
 }
 
+fn part_two(input: &Vec<Vec<char>>) {
+    let possible_headings = vec![
+        Heading { x: 1, y: -1 },
+        Heading { x: 1, y: 1 },
+        Heading { x: -1, y: 1 },
+        Heading { x: -1, y: -1 },
+    ];
+    let mut all_mas_coordinates: Vec<(Point, &Heading)> = vec![];
+
+    for y in 0..input.len() {
+        for x in 0..input[y].len() {
+            let mas_start_coordinates_for_index: Vec<(Point, &Heading)> = possible_headings
+                .iter()
+                .filter_map(|heading| {
+                    let mut input_character_iterator = TwoDimensionalIterator {
+                        current_index: Point {
+                            x: x as i32,
+                            y: y as i32,
+                        },
+                        heading,
+                        input: &input,
+                    };
+
+                    static MAS: &str = "MAS";
+
+                    let failed_match = MAS.chars().any(|character| {
+                        input_character_iterator
+                            .next()
+                            .map(|i| i != character)
+                            .unwrap_or(true)
+                    });
+
+                    if failed_match {
+                        None
+                    } else {
+                        Some((
+                            Point {
+                                x: x as i32,
+                                y: y as i32,
+                            },
+                            heading,
+                        ))
+                    }
+                })
+                .collect();
+
+            all_mas_coordinates.extend(mas_start_coordinates_for_index);
+        }
+    }
+
+    println!("Total X-MAS count: {:#?}", all_mas_coordinates);
+    println!("Total X-MAS count: {:?}", all_mas_coordinates.len());
+}
+
+#[derive(Debug)]
 struct Point {
     x: i32,
     y: i32,
 }
 
+#[derive(Debug)]
 struct Heading {
     x: i32,
     y: i32,
