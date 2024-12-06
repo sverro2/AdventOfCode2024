@@ -1,4 +1,7 @@
+use std::collections::HashSet;
+
 fn main() {
+    let start_time = std::time::Instant::now();
     let input = include_str!("../input.txt");
 
     let input = input
@@ -8,10 +11,11 @@ fn main() {
 
     part_one(&input);
     part_two(&input);
+    println!("Executing took: {:?}", start_time.elapsed());
 }
 
 fn part_one(input: &Vec<Vec<char>>) {
-    let possible_headings = vec![
+    let possible_headings = [
         Heading { x: 0, y: -1 },
         Heading { x: 1, y: -1 },
         Heading { x: 1, y: 0 },
@@ -34,7 +38,7 @@ fn part_one(input: &Vec<Vec<char>>) {
                             y: y as i32,
                         },
                         heading,
-                        input: &input,
+                        input,
                     };
 
                     static XMAS: &str = "XMAS";
@@ -53,7 +57,7 @@ fn part_one(input: &Vec<Vec<char>>) {
                     }
                 });
 
-            total_xmas_count = total_xmas_count + total_xmas_count_for_index;
+            total_xmas_count += total_xmas_count_for_index;
         }
     }
 
@@ -61,60 +65,59 @@ fn part_one(input: &Vec<Vec<char>>) {
 }
 
 fn part_two(input: &Vec<Vec<char>>) {
-    let possible_headings = vec![
+    let possible_headings = [
         Heading { x: 1, y: -1 },
         Heading { x: 1, y: 1 },
         Heading { x: -1, y: 1 },
         Heading { x: -1, y: -1 },
     ];
-    let mut all_mas_coordinates: Vec<(Point, &Heading)> = vec![];
+
+    let mut found = HashSet::new();
+    let mut found_multiple_times = vec![];
 
     for y in 0..input.len() {
         for x in 0..input[y].len() {
-            let mas_start_coordinates_for_index: Vec<(Point, &Heading)> = possible_headings
-                .iter()
-                .filter_map(|heading| {
-                    let mut input_character_iterator = TwoDimensionalIterator {
-                        current_index: Point {
-                            x: x as i32,
-                            y: y as i32,
-                        },
-                        heading,
-                        input: &input,
+            possible_headings.iter().for_each(|heading| {
+                let mut character_iterator = TwoDimensionalIterator {
+                    current_index: Point {
+                        x: x as i32,
+                        y: y as i32,
+                    },
+                    heading,
+                    input,
+                };
+
+                static MAS: &str = "MAS";
+
+                let failed_match = MAS.chars().any(|character| {
+                    character_iterator
+                        .next()
+                        .map(|i| i != character)
+                        .unwrap_or(true)
+                });
+
+                if !failed_match {
+                    // If we've found a word, we are actually interested in the second character ('A'),
+                    // because that is the middle of the two 'MAS' crossing each other.
+                    let second_character_index = Point {
+                        x: x as i32 + heading.x,
+                        y: y as i32 + heading.y,
                     };
 
-                    static MAS: &str = "MAS";
+                    let first_insert = found.insert(second_character_index.to_owned());
 
-                    let failed_match = MAS.chars().any(|character| {
-                        input_character_iterator
-                            .next()
-                            .map(|i| i != character)
-                            .unwrap_or(true)
-                    });
-
-                    if failed_match {
-                        None
-                    } else {
-                        Some((
-                            Point {
-                                x: x as i32,
-                                y: y as i32,
-                            },
-                            heading,
-                        ))
+                    if !first_insert {
+                        found_multiple_times.push(second_character_index);
                     }
-                })
-                .collect();
-
-            all_mas_coordinates.extend(mas_start_coordinates_for_index);
+                }
+            });
         }
     }
 
-    println!("Total X-MAS count: {:#?}", all_mas_coordinates);
-    println!("Total X-MAS count: {:?}", all_mas_coordinates.len());
+    println!("Total X-MAS count: {:?}", found_multiple_times.len());
 }
 
-#[derive(Debug)]
+#[derive(Debug, Eq, PartialEq, Hash, Clone)]
 struct Point {
     x: i32,
     y: i32,
