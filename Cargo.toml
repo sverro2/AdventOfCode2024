@@ -1,6 +1,6 @@
 [workspace]
 
-members = [ "day_four","day_one", "day_three", "day_two"]
+members = [ "day_five", "day_four","day_one", "day_three", "day_two"]
 resolver = "2"
 
 [workspace.dependencies]
