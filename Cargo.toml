@@ -1,6 +1,6 @@
 [workspace]
 
-members = [ "day_five", "day_four","day_one", "day_three", "day_two"]
+members = ["day_five", "day_four", "day_one", "day_six", "day_three", "day_two"]
 resolver = "2"
 
 [workspace.dependencies]
@@ -9,3 +9,4 @@ serde_json = "1.0.133"
 thiserror = "2.0.3"
 anyhow = "1.0.93"
 regex = "1.11.1"
+winnow = "0.6.20"
