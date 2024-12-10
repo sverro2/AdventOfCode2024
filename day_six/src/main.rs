@@ -55,10 +55,10 @@ fn part_2(maze: Maze) {
     // for each location, try out if it contains a loop
     let loop_count = locations_to_check
         .iter()
-        .filter_map(|location| {
+        .filter(|location| {
             let mut maze_to_check = maze.clone();
             maze_to_check.mark_obstructed(location);
-            detect_loop_in_maze(&mut maze_to_check).then_some(location)
+            detect_loop_in_maze(&mut maze_to_check)
         })
         .count();
 
@@ -67,7 +67,7 @@ fn part_2(maze: Maze) {
 
 fn detect_loop_in_maze(maze: &mut Maze) -> bool {
     let mut guard_direction = Direction::North;
-    let mut current_guard_location = locate_guard(&maze);
+    let mut current_guard_location = locate_guard(maze);
 
     let mut loop_detected = false;
 
