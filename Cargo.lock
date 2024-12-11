@@ -34,6 +34,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "day_seven"
+version = "0.1.0"
+dependencies = [
+ "winnow",
+]
+
+[[package]]
 name = "day_six"
 version = "0.1.0"
 dependencies = [
