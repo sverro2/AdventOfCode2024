@@ -1,3 +1,5 @@
+use operator::Operator;
+use operator::OperatorList;
 use winnow::ascii::digit1;
 use winnow::ascii::newline;
 use winnow::ascii::space1;
@@ -7,58 +9,18 @@ use winnow::combinator::terminated;
 use winnow::PResult;
 use winnow::Parser;
 
+mod operator;
+
 #[derive(Debug)]
 struct Equation {
     answer: u64,
     parts: Vec<u16>,
 }
 
-#[derive(Clone)]
-enum Operator {
-    Sum,
-    Multiply,
-    Concat,
-}
-
-impl Operator {
-    fn next(&self) -> Option<Self> {
-        match self {
-            Operator::Sum => Some(Operator::Multiply),
-            Operator::Multiply => Some(Operator::Concat),
-            Operator::Concat => None,
-        }
-    }
-
-    fn start() -> Self {
-        Self::Sum
-    }
-}
-
-struct OperatorList {
-    operators: Vec<Operator>
-}
-
-impl OperatorList {
-    fn at(&self, index :usize) -> Operator {
-        if index < self.operators.len() {
-            todo!()
-        } else {
-            Operator::start()
-        }
-    }
-
-    fn new() -> OperatorList {
-        Self {operators: vec![Operator::start()]}
-    }
-
-    fn next(&mut self) {
-
-    }
-}
-
 fn main() {
     let input = parse_equations();
     part_1(&input);
+    part_2(&input);
 }
 
 fn part_1(equations: &[Equation]) {
@@ -66,6 +28,19 @@ fn part_1(equations: &[Equation]) {
         .iter()
         .filter_map(|e| check_is_solvable(e).then_some(e.answer))
         .sum();
+
+    println!(
+        "Total sum of solvable equation answers: {}",
+        solvable_equation_sum
+    );
+}
+
+fn part_2(equations: &[Equation]) {
+    let solvable_equation_sum: u64 = equations
+        .iter()
+        .filter_map(|e| check_is_solvable_v2(e).then_some(e.answer))
+        .sum();
+
     println!(
         "Total sum of solvable equation answers: {}",
         solvable_equation_sum
@@ -105,38 +80,34 @@ fn check_is_solvable(equation: &Equation) -> bool {
 fn check_is_solvable_v2(equation: &Equation) -> bool {
     let amount_of_operants = equation.parts.len() as u32 - 1;
 
-    // Now there are three options. Things get more complex: '+', '*' and 'concat'
-    // I need more data, so now twice the bits. Could even add another operant in the future.
-    let possible_variations = u16::pow(4, amount_of_operants);
+    let possible_variations = usize::pow(3, amount_of_operants);
+    let operator_list = OperatorList::new();
 
-    (0..possible_variations).any(|operant_configuration| {
-        let mut accumulated = *equation
-            .parts
-            .first()
-            .expect("every equation needs at least one part") as u64;
+    operator_list
+        .take(possible_variations)
+        .any(|operant_configuration| {
+            let mut accumulated = *equation
+                .parts
+                .first()
+                .expect("every equation needs at least one part")
+                as u64;
 
-        for (index, next_item) in equation.parts.iter().skip(1).enumerate() {
-            if accumulated > equation.answer {
-                break;
+            for (index, next_item) in equation.parts.iter().skip(1).enumerate() {
+                if accumulated > equation.answer {
+                    break;
+                }
+
+                match operant_configuration.at(index) {
+                    Operator::Sum => accumulated += *next_item as u64,
+                    Operator::Multiply => accumulated *= *next_item as u64,
+                    Operator::Concat => {
+                        accumulated = format!("{accumulated}{next_item}").parse().unwrap()
+                    }
+                }
             }
 
-            let is_odd_index = index % 2 == 1;
-
-            let operator = if is_odd_index {
-                if operant_configuration >> index & 1 == 1;
-            } else {
-
-            }
-
-            if use_multiply {
-                accumulated *= (*next_item) as u64
-            } else {
-                accumulated += (*next_item) as u64
-            }
-        }
-
-        accumulated == equation.answer
-    })
+            accumulated == equation.answer
+        })
 }
 
 fn parse_equations() -> Vec<Equation> {
