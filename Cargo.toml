@@ -1,6 +1,14 @@
 [workspace]
 
-members = ["day_five", "day_four", "day_one", "day_seven", "day_six", "day_three", "day_two"]
+members = [ "day_eight",
+    "day_five",
+    "day_four",
+    "day_one",
+    "day_seven",
+    "day_six",
+    "day_three",
+    "day_two",
+]
 resolver = "2"
 
 [workspace.dependencies]
@@ -10,3 +18,4 @@ thiserror = "2.0.3"
 anyhow = "1.0.93"
 regex = "1.11.1"
 winnow = "0.6.20"
+rayon = "1.10.0"

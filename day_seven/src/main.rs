@@ -1,5 +1,8 @@
+use std::time::Instant;
+
 use operator::Operator;
 use operator::OperatorList;
+use rayon::prelude::*;
 use winnow::ascii::digit1;
 use winnow::ascii::newline;
 use winnow::ascii::space1;
@@ -20,7 +23,10 @@ struct Equation {
 fn main() {
     let input = parse_equations();
     part_1(&input);
+
+    let start = Instant::now();
     part_2(&input);
+    println!("Time taken: {:?}", start.elapsed());
 }
 
 fn part_1(equations: &[Equation]) {
@@ -37,8 +43,8 @@ fn part_1(equations: &[Equation]) {
 
 fn part_2(equations: &[Equation]) {
     let solvable_equation_sum: u64 = equations
-        .iter()
-        .filter_map(|e| check_is_solvable_v2(e).then_some(e.answer))
+        .par_iter()
+        .filter_map(|e| check_is_solvable_part2(e).then_some(e.answer))
         .sum();
 
     println!(
@@ -77,7 +83,7 @@ fn check_is_solvable(equation: &Equation) -> bool {
     })
 }
 
-fn check_is_solvable_v2(equation: &Equation) -> bool {
+fn check_is_solvable_part2(equation: &Equation) -> bool {
     let amount_of_operants = equation.parts.len() as u32 - 1;
 
     let possible_variations = usize::pow(3, amount_of_operants);
