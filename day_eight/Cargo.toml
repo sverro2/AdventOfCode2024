@@ -5,3 +5,5 @@ edition = "2021"
 
 [dependencies]
 winnow.workspace = true
+glam.workspace = true
+itertools.workspace = true

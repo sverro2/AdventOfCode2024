@@ -1,6 +1,7 @@
 [workspace]
 
-members = [ "day_eight",
+members = [
+    "day_eight",
     "day_five",
     "day_four",
     "day_one",
@@ -19,3 +20,5 @@ anyhow = "1.0.93"
 regex = "1.11.1"
 winnow = "0.6.20"
 rayon = "1.10.0"
+glam = "0.29.2"
+itertools = "0.13.0"
