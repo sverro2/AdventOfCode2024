@@ -1,6 +1,4 @@
-use std::collections::HashMap;
-
-use glam::{I8Vec2, U16Vec2, U8Vec2, UVec2};
+use glam::I8Vec2;
 use itertools::Itertools;
 use winnow::{
     ascii::line_ending,
@@ -46,7 +44,7 @@ fn part_1(roof: &Roof) {
         })
         .into_group_map_by(|(_, id)| **id);
 
-    let antinodes = map_of_antennas
+    let antinode_count = map_of_antennas
         .values()
         .flat_map(|coords| {
             coords.iter().combinations(2).flat_map(|pair| {
@@ -62,19 +60,10 @@ fn part_1(roof: &Roof) {
         .filter(|vec| {
             vec.cmpge(I8Vec2::ZERO).all() && vec.x < roof_diameter && vec.y < roof_diameter
         })
-        .sorted_by(|a, b| {
-            if a == b {
-                std::cmp::Ordering::Equal
-            } else if a.x < b.x || (a.x == b.x && a.y < b.y) {
-                std::cmp::Ordering::Less
-            } else {
-                std::cmp::Ordering::Greater
-            }
-        })
-        .dedup()
-        .collect::<Vec<_>>();
+        .unique()
+        .count();
 
-    println!("Amount of antinodes: {}", antinodes.len());
+    println!("Amount of antinodes: {}", antinode_count);
 }
 
 fn part_2(roof: &Roof) {
@@ -99,7 +88,7 @@ fn part_2(roof: &Roof) {
         })
         .into_group_map_by(|(_, id)| **id);
 
-    let antinodes = map_of_antennas
+    let antinode_count = map_of_antennas
         .values()
         .flat_map(|coords| {
             coords.iter().combinations(2).flat_map(|pair| {
@@ -140,19 +129,10 @@ fn part_2(roof: &Roof) {
                 antinodes
             })
         })
-        .sorted_by(|a, b| {
-            if a == b {
-                std::cmp::Ordering::Equal
-            } else if a.x < b.x || (a.x == b.x && a.y < b.y) {
-                std::cmp::Ordering::Less
-            } else {
-                std::cmp::Ordering::Greater
-            }
-        })
-        .dedup()
-        .collect::<Vec<_>>();
+        .unique()
+        .count();
 
-    println!("Amount of antinodes: {}", antinodes.len());
+    println!("Amount of antinodes: {}", antinode_count);
 }
 
 fn parse_input() -> Roof {
