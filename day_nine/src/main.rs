@@ -13,7 +13,7 @@ fn main() {
 }
 
 fn part_one(disk_map: &[u8]) {
-    fn create_file_iter(
+    fn create_file_block_iter(
         mut file_location_iter: impl Iterator<Item = (usize, u8)>,
     ) -> impl Iterator<Item = (usize, u8)> {
         successors(file_location_iter.next(), move |(file_id, count)| {
@@ -28,10 +28,10 @@ fn part_one(disk_map: &[u8]) {
         })
     }
 
-    let mut file_iter_from_start =
-        create_file_iter(disk_map.iter().copied().step_by(2).enumerate());
-    let mut file_iter_from_end =
-        create_file_iter(disk_map.iter().copied().step_by(2).enumerate().rev());
+    let mut file_block_iter_from_start =
+        create_file_block_iter(disk_map.iter().copied().step_by(2).enumerate());
+    let mut file_block_iter_from_end =
+        create_file_block_iter(disk_map.iter().copied().step_by(2).enumerate().rev());
 
     let mut disk_block_index = 0..;
     let disk_capacity_used_by_files: usize = disk_map.iter().step_by(2).map(|f| *f as usize).sum();
@@ -40,15 +40,17 @@ fn part_one(disk_map: &[u8]) {
         .iter()
         .enumerate()
         .flat_map(|(disk_map_index, count)| {
-            let iter: &mut dyn Iterator<Item = (usize, u8)> = if disk_map_index % 2 == 0 {
+            let file_block_iter: &mut dyn Iterator<Item = (usize, u8)> = if disk_map_index % 2 == 0
+            {
                 // if reading file
-                &mut file_iter_from_start
+                &mut file_block_iter_from_start
             } else {
                 // if reading free space
-                &mut file_iter_from_end
+                &mut file_block_iter_from_end
             };
 
-            iter.take(*count as usize)
+            file_block_iter
+                .take(*count as usize)
                 .map(|(file_id, _)| disk_block_index.next().unwrap_or(0) as u64 * file_id as u64)
                 .collect::<Vec<_>>()
         })
