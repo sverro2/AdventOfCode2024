@@ -77,12 +77,15 @@ fn part_two(disk_map: &[u8]) {
         })
         .collect();
 
-    let mut usable_space_list: Vec<(usize, UsableSpace)> = (1..disk_map.len())
+    let mut usable_space_list: Vec<(usize, UsableSpace)> = disk_map
+        .iter()
+        .enumerate()
+        .skip(1)
         .step_by(2)
-        .map(|index| {
+        .map(|(index, block)| {
             (
                 index,
-                match &disk_map[index] {
+                match block {
                     // We know empty-index always is emptiness with aoc input
                     DiskMapPart::FileBlock(_) => unreachable!(),
                     DiskMapPart::UsableSpaceBlock(usable_space) => usable_space.to_owned(),
@@ -91,12 +94,14 @@ fn part_two(disk_map: &[u8]) {
         })
         .collect();
 
-    let mut file_list: Vec<(usize, File)> = (0..disk_map.len())
+    let mut file_list: Vec<(usize, File)> = disk_map
+        .iter()
+        .enumerate()
         .step_by(2)
-        .map(|index| {
+        .map(|(index, block)| {
             (
                 index,
-                match &disk_map[index] {
+                match &block {
                     // We know file-index always contains a file with aoc input
                     DiskMapPart::FileBlock(file) => file.to_owned(),
                     DiskMapPart::UsableSpaceBlock(_) => unreachable!(),
@@ -105,12 +110,12 @@ fn part_two(disk_map: &[u8]) {
         })
         .collect();
 
-    let mut usable_spaces_to_check = usable_space_list.iter_mut().collect::<Vec<_>>();
+    let mut remaining_usable_spaces_to_check = usable_space_list.iter_mut().collect::<Vec<_>>();
 
     // for each file, check if it can be put into a preceding empty space
     for (file_index, file) in file_list.iter_mut().rev() {
-        let mut map_index_to_remove: Option<usize> = None;
-        if let Some((usable_index, usable_space)) = usable_spaces_to_check
+        let mut usable_index_to_remove: Option<usize> = None;
+        if let Some((usable_index, usable_space)) = remaining_usable_spaces_to_check
             .iter_mut()
             .take_while(|(usable_index, _)| *usable_index < *file_index)
             .find(|(_, usable_space)| usable_space.total_free() >= file.length)
@@ -118,22 +123,22 @@ fn part_two(disk_map: &[u8]) {
             // Add file to usable space block
             usable_space.used_by.push(file.clone());
 
-            // Make sure we don't try to use the usable-space block
-            // when it is all filled up now
+            // Prepare removal of in future unusable 'usable_index'
             if usable_space.total_free() == 0 {
-                map_index_to_remove = Some(*usable_index);
+                usable_index_to_remove = Some(*usable_index);
             }
 
             // Old file location must now be emptiness, or at least be counted as 0 ;)
             file.file_id = 0;
         }
 
-        if let Some(index_to_remove) = map_index_to_remove.and_then(|index| {
-            usable_spaces_to_check
+        // Find and remove index of usable index that is 'full'
+        if let Some(index_to_remove) = usable_index_to_remove.and_then(|index| {
+            remaining_usable_spaces_to_check
                 .iter()
                 .position(|(index_in_list, _)| index == *index_in_list)
         }) {
-            usable_spaces_to_check.remove(index_to_remove);
+            remaining_usable_spaces_to_check.remove(index_to_remove);
         }
     }
 
@@ -145,12 +150,13 @@ fn part_two(disk_map: &[u8]) {
                 .map(move |_| file.file_id)
                 .collect::<Vec<_>>()
         })
-        // And interleave this with the data from the usable spaces (which might contain files)
+        // And interleave this with the data from the usable spaces (which might contain files as well)
         .interleave(usable_space_list.iter().map(|(_, usable_space)| {
             usable_space
                 .used_by
                 .iter()
                 .flat_map(move |file| (0..file.length).map(move |_| file.file_id))
+                // empty space is padded with 0's
                 .chain((0..usable_space.total_free()).map(|_| 0))
                 .collect::<Vec<_>>()
         }))
