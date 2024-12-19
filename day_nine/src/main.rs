@@ -1,7 +1,7 @@
 use std::iter::successors;
 
 fn main() {
-    let input = include_str!("../input_short.txt");
+    let input = include_str!("../input.txt");
 
     // Just map all to u8 (except last newline character)
     let disk_map: Vec<u8> = input[..input.len() - 1]
@@ -62,14 +62,47 @@ fn create_file_block_iter(
 }
 
 #[derive(Debug)]
-struct DiskMapPart {
-    total_length: usize,
-    file: Option<File>,
+enum DiskMapPart {
+    FileBlock(File),
+    UsableSpaceBlock(UsableSpace),
+}
+
+#[derive(Debug, Clone)]
+struct File {
+    file_id: usize,
+    length: usize,
 }
 
 #[derive(Debug)]
-struct File {
-    file_id: usize,
+struct UsableSpace {
+    total_capacity: usize,
+    used_by: Vec<File>,
+}
+
+impl DiskMapPart {
+    fn new_empty(length: usize) -> Self {
+        Self::UsableSpaceBlock(UsableSpace {
+            total_capacity: length,
+            used_by: vec![],
+        })
+    }
+
+    fn new_empty_from(file: File) -> Self {
+        Self::UsableSpaceBlock(UsableSpace {
+            total_capacity: file.length,
+            used_by: vec![],
+        })
+    }
+
+    fn new_file(file_id: usize, length: usize) -> Self {
+        Self::FileBlock(File { file_id, length })
+    }
+}
+
+impl UsableSpace {
+    fn total_free(&self) -> usize {
+        self.total_capacity - self.used_by.iter().map(|file| file.length).sum::<usize>()
+    }
 }
 
 fn part_two(disk_map: &[u8]) {
@@ -78,15 +111,9 @@ fn part_two(disk_map: &[u8]) {
         .enumerate()
         .map(|(index, length)| {
             if index % 2 == 0 {
-                DiskMapPart {
-                    total_length: *length as usize,
-                    file: Some(File { file_id: index / 2 }),
-                }
+                DiskMapPart::new_file(index / 2, *length as usize)
             } else {
-                DiskMapPart {
-                    total_length: *length as usize,
-                    file: None,
-                }
+                DiskMapPart::new_empty(*length as usize)
             }
         })
         .collect();
@@ -94,20 +121,49 @@ fn part_two(disk_map: &[u8]) {
     // for each file, check if it can be put into a preceding empty space
     for file_index in (2..disk_map.len()).step_by(2).rev() {
         if let Some(empty_index) = (1..file_index).step_by(2).find(|&empty_index| {
-            disk_map[empty_index].file.is_none()
-                && disk_map[empty_index].total_length >= disk_map[file_index].total_length
+            match (&disk_map[empty_index], &disk_map[file_index]) {
+                (DiskMapPart::UsableSpaceBlock(usable_space), DiskMapPart::FileBlock(file)) => {
+                    usable_space.total_free() >= file.length
+                }
+                _ => false,
+            }
         }) {
+            let file_to_move = match &disk_map[file_index] {
+                DiskMapPart::FileBlock(file) => file,
+                DiskMapPart::UsableSpaceBlock(_) => unreachable!(),
+            }
+            .to_owned();
+
             // Move the file to the empty space
-            disk_map[empty_index].file = disk_map[file_index].file.take();
+            match &mut disk_map[empty_index] {
+                DiskMapPart::UsableSpaceBlock(usable_space) => {
+                    usable_space.used_by.push(file_to_move.to_owned());
+                }
+                DiskMapPart::FileBlock(_) => unreachable!(),
+            }
+            disk_map[file_index] = DiskMapPart::new_empty_from(File {
+                file_id: 0,
+                length: file_to_move.length,
+            });
         }
     }
 
     let filesystem_checksum: u64 = disk_map
         .iter()
-        .flat_map(|item| {
-            (0..item.total_length).map(|_| item.file.as_ref().map(|f| f.file_id).unwrap_or(0))
+        .flat_map(|item| -> Box<dyn Iterator<Item = usize>> {
+            match item {
+                DiskMapPart::FileBlock(file) => {
+                    Box::new((0..file.length).map(move |_| file.file_id))
+                }
+                DiskMapPart::UsableSpaceBlock(usable_space) => Box::new(
+                    usable_space
+                        .used_by
+                        .iter()
+                        .flat_map(move |file| (0..file.length).map(move |_| file.file_id))
+                        .chain((0..usable_space.total_free()).map(|_| 0)),
+                ),
+            }
         })
-        .inspect(|i| println!("{i}"))
         .enumerate()
         .map(|(index, id)| index as u64 * id as u64)
         .sum();
