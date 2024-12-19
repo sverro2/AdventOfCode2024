@@ -65,49 +65,19 @@ fn create_file_block_iter(
 }
 
 fn part_two(disk_map: &[u8]) {
-    let disk_map: Vec<_> = disk_map
-        .iter()
-        .enumerate()
-        .map(|(index, length)| {
-            if index % 2 == 0 {
-                DiskMapPart::new_file(index / 2, *length as usize)
-            } else {
-                DiskMapPart::new_empty(*length as usize)
-            }
-        })
-        .collect();
-
     let mut usable_space_list: Vec<(usize, UsableSpace)> = disk_map
         .iter()
         .enumerate()
         .skip(1)
         .step_by(2)
-        .map(|(index, block)| {
-            (
-                index,
-                match block {
-                    // We know empty-index always is emptiness with aoc input
-                    DiskMapPart::FileBlock(_) => unreachable!(),
-                    DiskMapPart::UsableSpaceBlock(usable_space) => usable_space.to_owned(),
-                },
-            )
-        })
+        .map(|(index, length)| (index, UsableSpace::new(*length as usize)))
         .collect();
 
     let mut file_list: Vec<(usize, File)> = disk_map
         .iter()
         .enumerate()
         .step_by(2)
-        .map(|(index, block)| {
-            (
-                index,
-                match &block {
-                    // We know file-index always contains a file with aoc input
-                    DiskMapPart::FileBlock(file) => file.to_owned(),
-                    DiskMapPart::UsableSpaceBlock(_) => unreachable!(),
-                },
-            )
-        })
+        .map(|(index, length)| (index, File::new(index / 2, *length as usize)))
         .collect();
 
     let mut remaining_usable_spaces_to_check = usable_space_list.iter_mut().collect::<Vec<_>>();
@@ -170,16 +140,16 @@ fn part_two(disk_map: &[u8]) {
     println!("The checksum is (part 2): {}", filesystem_checksum);
 }
 
-#[derive(Debug)]
-enum DiskMapPart {
-    FileBlock(File),
-    UsableSpaceBlock(UsableSpace),
-}
-
 #[derive(Debug, Clone)]
 struct File {
     file_id: usize,
     length: usize,
+}
+
+impl File {
+    fn new(file_id: usize, length: usize) -> Self {
+        Self { file_id, length }
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -188,21 +158,15 @@ struct UsableSpace {
     used_by: Vec<File>,
 }
 
-impl DiskMapPart {
-    fn new_empty(length: usize) -> Self {
-        Self::UsableSpaceBlock(UsableSpace {
-            total_capacity: length,
-            used_by: vec![],
-        })
-    }
-
-    fn new_file(file_id: usize, length: usize) -> Self {
-        Self::FileBlock(File { file_id, length })
-    }
-}
-
 impl UsableSpace {
     fn total_free(&self) -> usize {
         self.total_capacity - self.used_by.iter().map(|file| file.length).sum::<usize>()
+    }
+
+    fn new(length: usize) -> Self {
+        Self {
+            total_capacity: length,
+            used_by: vec![],
+        }
     }
 }
