@@ -65,7 +65,7 @@ fn main() {
         })
         .collect();
 
-    let trail_sum: usize = potential_trail_start_coordinates
+    let trail_ending_coordinates: Vec<_> = potential_trail_start_coordinates
         .iter()
         .map(|start_coordinate| {
             // Depth first search, counting destinations
@@ -98,11 +98,24 @@ fn main() {
                     .for_each(|next| next_coordinates_to_check.push(next));
             }
 
-            trail_end_coordinates.iter().unique().count()
+            trail_end_coordinates
         })
-        .sum();
+        .collect();
 
-    println!("{trail_sum}");
+    // First we filter out all endings that have routes connecting to it multiple times
+    println!(
+        "Part 1, unique start-to-end: {}",
+        trail_ending_coordinates
+            .iter()
+            .flat_map(|f| f.iter().unique())
+            .count()
+    );
+
+    // Then... we don't need to anymore ;)
+    println!(
+        "Part 2, all possible trails: {}",
+        trail_ending_coordinates.iter().flatten().count()
+    );
 }
 
 fn parse_input() -> Map {
