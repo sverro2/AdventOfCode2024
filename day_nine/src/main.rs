@@ -80,6 +80,7 @@ fn part_two(disk_map: &[u8]) {
         .map(|(index, length)| (index, File::new(index / 2, *length as usize)))
         .collect();
 
+    // Create a list of references and see real-time what spaces still can be filled in.
     let mut remaining_usable_spaces_to_check = usable_space_list.iter_mut().collect::<Vec<_>>();
 
     // for each file, check if it can be put into a preceding empty space
