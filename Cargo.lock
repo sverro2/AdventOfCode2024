@@ -52,6 +52,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "day_eleven"
+version = "0.1.0"
+dependencies = [
+ "itertools",
+ "rayon",
+]
+
+[[package]]
 name = "day_five"
 version = "0.1.0"
 
@@ -104,6 +112,10 @@ version = "0.1.0"
 dependencies = [
  "regex",
 ]
+
+[[package]]
+name = "day_twelve"
+version = "0.1.0"
 
 [[package]]
 name = "day_two"

@@ -2,12 +2,16 @@
 
 members = [
     "day_eight",
+    "day_eleven",
     "day_five",
-    "day_four", "day_nine",
+    "day_four",
+    "day_nine",
     "day_one",
     "day_seven",
-    "day_six", "day_ten",
+    "day_six",
+    "day_ten",
     "day_three",
+    "day_twelve",
     "day_two",
 ]
 resolver = "2"
@@ -22,3 +26,4 @@ winnow = "0.6.20"
 rayon = "1.10.0"
 glam = "0.29.2"
 itertools = "0.13.0"
+num-traits = "0.2"
