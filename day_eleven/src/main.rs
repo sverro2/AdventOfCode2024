@@ -4,9 +4,7 @@ use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
 fn main() {
     let input_stones = parse_input();
     part_1(&input_stones);
-    let time = std::time::Instant::now();
     part_2(&input_stones);
-    println!("time elapsed: {:?}", time.elapsed());
 }
 
 fn part_1(stones: &[u64]) {
@@ -37,10 +35,10 @@ fn count_stones_recursively(stone: u64, remaining: usize) -> u64 {
 }
 
 fn part_2(stones: &[u64]) {
-    let calculation_depth = 3; // 3 * 25 = 75 blinks
-    const TIMES_BLINKING_CHUNK: usize = 25;
+    let times_blinking_per_chunk: usize = 25;
+    let depth = 3; // 3 * 25 = 75 blinks total
 
-    let counted_stones = find_stones_chunked(stones, calculation_depth, TIMES_BLINKING_CHUNK);
+    let counted_stones = find_stones_chunked(stones, depth, times_blinking_per_chunk);
     println!("Stones counted: {}", counted_stones);
 }
 
