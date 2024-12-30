@@ -35,17 +35,23 @@ fn count_stones_recursively(stone: u64, remaining: usize) -> u64 {
 }
 
 fn part_2(stones: &[u64]) {
-    let times_blinking_per_chunk: usize = 25;
+    // With this approach, I noticed lots of values will be repeated, but I should have
+    // used an approach that would reuse even more/cache more stones. The stone 'numbers' are very limited.
+    // I could have precaculated every stone. This would have made the calculations a lot faster!
+    //
+    //
+    // Chosen approach is a lot faster than brute-forcing, though. I didn't fail completely.
+    let blinks_per_chunk: usize = 25;
     let depth = 3; // 3 * 25 = 75 blinks total
 
-    let counted_stones = find_stones_chunked(stones, depth, times_blinking_per_chunk);
+    let counted_stones = find_stones_chunked(stones, depth, blinks_per_chunk);
     println!("Stones counted: {}", counted_stones);
 }
 
-fn find_stones_chunked(stones: &[u64], remaining_chunks: usize, blinks_per_chunk: usize) -> u64 {
+fn find_stones_chunked(stones: &[u64], remaining_repeats: usize, blinks_per_chunk: usize) -> u64 {
     let amount_of_stones = stones.iter().copied().counts();
 
-    if remaining_chunks == 0 {
+    if remaining_repeats == 0 {
         amount_of_stones.values().map(|i| *i as u64).sum()
     } else {
         amount_of_stones
@@ -55,7 +61,7 @@ fn find_stones_chunked(stones: &[u64], remaining_chunks: usize, blinks_per_chunk
                 |acc, (stone, multiplier)| {
                     acc + find_stones_chunked(
                         &find_stones_recursively(*stone, blinks_per_chunk),
-                        remaining_chunks - 1,
+                        remaining_repeats - 1,
                         blinks_per_chunk,
                     ) * *multiplier as u64
                 },
