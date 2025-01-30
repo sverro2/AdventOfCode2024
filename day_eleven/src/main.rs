@@ -40,7 +40,9 @@ fn part_2(stones: &[u64]) {
     // I could have precaculated every stone. This would have made the calculations a lot faster!
     //
     //
-    // Chosen approach is a lot faster than brute-forcing, though. I didn't fail completely.
+    // Chosen approach is a lot faster compared to brute-forcing, though. I didn't fail completely.
+    // Solution now takes 2 minutes (on slow machine)
+    // brute-force didn't finish, even after waiting for a few hours!
     let blinks_per_chunk: usize = 25;
     let depth = 3; // 3 * 25 = 75 blinks total
 
