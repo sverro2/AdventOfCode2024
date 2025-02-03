@@ -1,8 +1,6 @@
 use std::collections::HashSet;
 
 use itertools::Itertools;
-mod part_one;
-mod part_two;
 
 fn main() {
     let input = include_str!("../input.txt");
