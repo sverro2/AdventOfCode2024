@@ -59,7 +59,6 @@ fn part_two(crane_configs: &Vec<CraneConfig>) {
             button_b: config.button_b,
             price: config.price + CONFIG_OFFSET,
         })
-        // .cloned()
         .flat_map(calculate_fewest_tokens_for_price_v2)
         .sum();
 
@@ -67,7 +66,6 @@ fn part_two(crane_configs: &Vec<CraneConfig>) {
 }
 
 fn calculate_fewest_tokens_for_price_v2(crane_config: CraneConfig) -> Option<i64> {
-    println!("Calculating another crane...");
     const BUTTON_A_TOKEN_PRICE: i64 = 3;
     const BUTTON_B_TOKEN_PRICE: i64 = 1;
 
@@ -77,6 +75,8 @@ fn calculate_fewest_tokens_for_price_v2(crane_config: CraneConfig) -> Option<i64
     // figure out the maximums for both buttons
     let mut min_cost = None;
 
+    // We break out of loops in a way that is ok for current input data.
+    // With other data you might actually have to ... not break out of the loops
     'outer: for a_presses in (0..max_times_to_press_button_a).rev() {
         let vec_after_a_presses = a_presses * crane_config.button_a;
         let remaining = crane_config.price - vec_after_a_presses;
