@@ -107,6 +107,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "day_thirteen"
+version = "0.1.0"
+dependencies = [
+ "glam",
+ "itertools",
+ "rayon",
+ "winnow",
+]
+
+[[package]]
 name = "day_three"
 version = "0.1.0"
 dependencies = [

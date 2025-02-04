@@ -1,0 +1,10 @@
+[package]
+name = "day_thirteen"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+winnow.workspace = true
+glam.workspace = true
+itertools.workspace = true
+rayon.workspace = true
