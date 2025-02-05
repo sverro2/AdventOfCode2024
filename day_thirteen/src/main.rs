@@ -1,16 +1,16 @@
-use glam::{I64Vec2, IVec2};
+use glam::I64Vec2;
 use rayon::iter::IntoParallelRefIterator;
 use rayon::prelude::*;
 use winnow::ascii::digit1;
 use winnow::combinator::{preceded, repeat};
 use winnow::stream::AsChar;
 use winnow::token::take_while;
-use winnow::{PResult, Parser};
+use winnow::{Parser, Result};
 
 fn main() {
     let crane_configs = parse_crane_configs();
 
-    // Starting with a massive, very simple but inefficient bruteforce
+    // Starting with a very simple but inefficient bruteforce
     part_one(&crane_configs);
 
     // Better.. but still brute forcing things...
@@ -34,19 +34,15 @@ fn calculate_fewest_tokens_for_price_v1(crane_config: &CraneConfig) -> Option<i6
     const MAX_TIMES_TO_PRESS_BUTTON: i64 = 100;
 
     (0..MAX_TIMES_TO_PRESS_BUTTON)
-        .into_iter()
-        .map(|a| {
-            (0..MAX_TIMES_TO_PRESS_BUTTON)
-                .into_iter()
-                .filter_map(move |b| {
-                    if a * crane_config.button_a + b * crane_config.button_b == crane_config.price {
-                        Some(a * BUTTON_A_TOKEN_PRICE + b * BUTTON_B_TOKEN_PRICE)
-                    } else {
-                        None
-                    }
-                })
+        .flat_map(|a| {
+            (0..MAX_TIMES_TO_PRESS_BUTTON).filter_map(move |b| {
+                if a * crane_config.button_a + b * crane_config.button_b == crane_config.price {
+                    Some(a * BUTTON_A_TOKEN_PRICE + b * BUTTON_B_TOKEN_PRICE)
+                } else {
+                    None
+                }
+            })
         })
-        .flatten()
         .min()
 }
 
@@ -115,7 +111,7 @@ fn parse_crane_configs() -> Vec<CraneConfig> {
         .expect("unable to parse input file")
 }
 
-fn parse_crane(input: &mut &str) -> PResult<CraneConfig> {
+fn parse_crane(input: &mut &str) -> Result<CraneConfig> {
     Ok(CraneConfig {
         button_a: parse_next_vector(input)?,
         button_b: parse_next_vector(input)?,
@@ -123,7 +119,7 @@ fn parse_crane(input: &mut &str) -> PResult<CraneConfig> {
     })
 }
 
-fn parse_next_vector(input: &mut &str) -> PResult<I64Vec2> {
+fn parse_next_vector(input: &mut &str) -> Result<I64Vec2> {
     let mut next_number_parser =
         preceded(take_while(1.., |c: char| !c.is_dec_digit()), digit1).try_map(str::parse);
 

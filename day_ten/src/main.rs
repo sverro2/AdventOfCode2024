@@ -3,8 +3,8 @@ use winnow::ascii::line_ending;
 use winnow::combinator::repeat;
 use winnow::combinator::separated;
 use winnow::token::any;
-use winnow::PResult;
 use winnow::Parser;
+use winnow::Result;
 
 #[derive(Debug)]
 struct Map {
@@ -89,10 +89,8 @@ fn main() {
                         if *next_value == 9 && valid_next_value {
                             trail_end_coordinates.push(*next_coordinate);
                             false
-                        } else if valid_next_value {
-                            true
                         } else {
-                            false
+                            valid_next_value
                         }
                     })
                     .for_each(|next| next_coordinates_to_check.push(next));
@@ -126,11 +124,11 @@ fn parse_input() -> Map {
     }
 }
 
-fn parse_map(input: &mut &str) -> PResult<Vec<Vec<u8>>> {
+fn parse_map(input: &mut &str) -> Result<Vec<Vec<u8>>> {
     separated(1.., parse_map_row, line_ending).parse_next(input)
 }
 
-fn parse_map_row(input: &mut &str) -> PResult<Vec<u8>> {
+fn parse_map_row(input: &mut &str) -> Result<Vec<u8>> {
     repeat(
         1..,
         any.verify(|c: &char| c.is_ascii_digit())

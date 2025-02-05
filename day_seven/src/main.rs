@@ -9,8 +9,8 @@ use winnow::ascii::space1;
 use winnow::combinator::repeat;
 use winnow::combinator::separated;
 use winnow::combinator::terminated;
-use winnow::PResult;
 use winnow::Parser;
+use winnow::Result;
 
 mod operator;
 
@@ -123,7 +123,7 @@ fn parse_equations() -> Vec<Equation> {
         .expect("unable to parse input file")
 }
 
-fn parse_equation(input: &mut &str) -> PResult<Equation> {
+fn parse_equation(input: &mut &str) -> Result<Equation> {
     let answer: u64 = terminated(digit1, (':', space1))
         .try_map(str::parse)
         .parse_next(input)?;
@@ -133,7 +133,7 @@ fn parse_equation(input: &mut &str) -> PResult<Equation> {
     Ok(Equation { answer, parts })
 }
 
-fn parse_equation_parts(input: &mut &str) -> PResult<Vec<u16>> {
+fn parse_equation_parts(input: &mut &str) -> Result<Vec<u16>> {
     terminated(
         separated(1.., digit1.try_map(str::parse::<u16>), space1),
         newline,

@@ -5,7 +5,7 @@ use winnow::{
     error::{StrContext, StrContextValue},
     token::any,
 };
-use winnow::{PResult, Parser};
+use winnow::{Parser, Result};
 
 fn main() {
     parse_input();
@@ -95,15 +95,15 @@ fn detect_loop_in_maze(maze: &mut Maze) -> bool {
     loop_detected
 }
 
-fn parse_maze(input: &mut &str) -> PResult<Vec<Vec<Chamber>>> {
+fn parse_maze(input: &mut &str) -> Result<Vec<Vec<Chamber>>> {
     repeat(1.., parse_maze_row).parse_next(input)
 }
 
-fn parse_maze_row(input: &mut &str) -> PResult<Vec<Chamber>> {
+fn parse_maze_row(input: &mut &str) -> Result<Vec<Chamber>> {
     terminated(repeat(1.., parse_chamber), newline).parse_next(input)
 }
 
-fn parse_chamber(input: &mut &str) -> PResult<Chamber> {
+fn parse_chamber(input: &mut &str) -> Result<Chamber> {
     dispatch!(any;
         '.' =>  empty.value(Chamber::Empty),
         '#' => empty.value(Chamber::Obstruction),

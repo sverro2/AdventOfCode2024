@@ -4,7 +4,7 @@ use winnow::{
     ascii::line_ending,
     combinator::{alt, repeat, separated},
     token::one_of,
-    PResult, Parser,
+    Parser, Result,
 };
 
 struct Roof {
@@ -141,11 +141,11 @@ fn parse_input() -> Roof {
     Roof { tiles }
 }
 
-fn parse_roof(input: &mut &str) -> PResult<Vec<Vec<RoofTile>>> {
+fn parse_roof(input: &mut &str) -> Result<Vec<Vec<RoofTile>>> {
     separated(1.., parse_roof_row, line_ending).parse_next(input)
 }
 
-fn parse_roof_row(input: &mut &str) -> PResult<Vec<RoofTile>> {
+fn parse_roof_row(input: &mut &str) -> Result<Vec<RoofTile>> {
     repeat(
         1..,
         alt((
