@@ -41,7 +41,7 @@ impl BotsInQuadrantCount {
 fn main() {
     let parsed_bots = parse_restroom_bots();
     part_1(&parsed_bots);
-    // part_2(&parsed_bots);
+    part_2(&parsed_bots);
 }
 
 fn part_1(bots: &Vec<SecurityBotConfig>) {
@@ -64,7 +64,20 @@ fn part_1(bots: &Vec<SecurityBotConfig>) {
 }
 
 fn part_2(bots: &Vec<SecurityBotConfig>) {
-    let bot_locations_list: Vec<HashSet<_>> = (0..2000)
+    // I admit. I didn't really solve it, but wanted to see the solution.
+    // I saw there was some cyclic action going on, noticed when frames appeared which looked non-random.
+    // For my input, the first noisy "image" appeared at 27 seconds. A simular (bit slightly different)
+    // picture appeared at 130. This repeated every 103 seconds.
+    // with the "script below" I just repeated this until I saw a christmas try appearing (pressing ctrl+c) and reading the number
+    //
+    // a "boring" programming only solution would have been to just see which frame had most connected bots/the least amount of separate groupos of bots
+    // 10403 was choses as maximum, because I noticed the cycles repeated every 10403 seconds
+    // these cycles resulted in perfectly identical images.
+    const FIRST_NON_RANDOM_LOOKING_OUTPUT_SECONDS: i32 = 27;
+    const CYCLE: usize = 103;
+
+    let bot_locations_list: Vec<HashSet<_>> = (FIRST_NON_RANDOM_LOOKING_OUTPUT_SECONDS..10403)
+        .step_by(CYCLE)
         .map(|seconds| {
             bots.iter()
                 .map(|bot| calculate_location_after_simulation(bot, seconds, ROOM_WIDE, ROOM_TALL))
@@ -83,9 +96,12 @@ fn part_2(bots: &Vec<SecurityBotConfig>) {
             });
             println!("");
         });
-        println!("Seconds: {x}");
+        println!(
+            "Seconds: {}",
+            x * CYCLE + FIRST_NON_RANDOM_LOOKING_OUTPUT_SECONDS as usize
+        );
         println!("------------------------------------------");
-        std::thread::sleep(std::time::Duration::from_millis(100));
+        std::thread::sleep(std::time::Duration::from_millis(200));
 
         // sooo lets check when most of the dots are connected and log that number
     });
