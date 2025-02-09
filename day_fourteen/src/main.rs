@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use glam::IVec2;
 use winnow::{
     ascii::{dec_int, line_ending},
@@ -39,12 +41,11 @@ impl BotsInQuadrantCount {
 fn main() {
     let parsed_bots = parse_restroom_bots();
     part_1(&parsed_bots);
+    // part_2(&parsed_bots);
 }
 
 fn part_1(bots: &Vec<SecurityBotConfig>) {
     let mut count = BotsInQuadrantCount::default();
-
-    println!("Length: {}", bots.len());
 
     bots.iter()
         .map(|bot| {
@@ -62,6 +63,34 @@ fn part_1(bots: &Vec<SecurityBotConfig>) {
     println!("{:?}", safety_factor);
 }
 
+fn part_2(bots: &Vec<SecurityBotConfig>) {
+    let bot_locations_list: Vec<HashSet<_>> = (0..2000)
+        .map(|seconds| {
+            bots.iter()
+                .map(|bot| calculate_location_after_simulation(bot, seconds, ROOM_WIDE, ROOM_TALL))
+                .collect()
+        })
+        .collect();
+
+    bot_locations_list.iter().enumerate().for_each(|(x, list)| {
+        (0i32..ROOM_TALL).for_each(|y| {
+            (0i32..ROOM_WIDE).for_each(|x| {
+                if list.contains(&IVec2 { x, y }) {
+                    print!("+")
+                } else {
+                    print!(" ")
+                }
+            });
+            println!("");
+        });
+        println!("Seconds: {x}");
+        println!("------------------------------------------");
+        std::thread::sleep(std::time::Duration::from_millis(100));
+
+        // sooo lets check when most of the dots are connected and log that number
+    });
+}
+
 fn calculate_location_after_simulation(
     bot: &SecurityBotConfig,
     iterations: i32,
@@ -70,42 +99,8 @@ fn calculate_location_after_simulation(
 ) -> IVec2 {
     let new_location: IVec2 = bot.location + bot.speed * iterations;
 
-    let wrapped_x = if new_location.x < 0 {
-        let x_mod = new_location.x % x_size;
-
-        if x_mod == 0 {
-            bot.location.x
-        } else {
-            x_size + x_mod
-        }
-    } else if new_location.x >= x_size {
-        let x_mod = new_location.x % x_size;
-        if x_mod == 0 {
-            bot.location.x
-        } else {
-            x_mod
-        }
-    } else {
-        new_location.x
-    };
-
-    let wrapped_y = if new_location.y < 0 {
-        let y_mod = new_location.y % y_size;
-        if y_mod == 0 {
-            bot.location.y
-        } else {
-            y_size + y_mod
-        }
-    } else if new_location.y >= y_size {
-        let y_mod = new_location.y % y_size;
-        if y_mod == 0 {
-            bot.location.y
-        } else {
-            y_mod
-        }
-    } else {
-        new_location.y
-    };
+    let wrapped_x = ((new_location.x % x_size) + x_size) % x_size;
+    let wrapped_y = ((new_location.y % y_size) + y_size) % y_size;
 
     IVec2 {
         x: wrapped_x,
@@ -116,7 +111,7 @@ fn calculate_location_after_simulation(
 fn parse_restroom_bots() -> Vec<SecurityBotConfig> {
     let mut input = include_str!("../input.txt");
 
-    separated(1.., parse_bot, line_ending)
+    separated(0.., parse_bot, line_ending)
         .parse_next(&mut input)
         .expect("Unable to parse aoc input")
 }
@@ -358,6 +353,32 @@ mod test {
         let mut count = BotsInQuadrantCount::default();
         let expected_count = BotsInQuadrantCount {
             bottom_right: 1,
+            ..Default::default()
+        };
+
+        count.increase(&location);
+
+        assert_eq!(expected_count, count);
+    }
+
+    #[test]
+    fn test_quadrant_horizontal_center_ignored() {
+        let location = IVec2 { x: 50, y: 0 };
+        let mut count = BotsInQuadrantCount::default();
+        let expected_count = BotsInQuadrantCount {
+            ..Default::default()
+        };
+
+        count.increase(&location);
+
+        assert_eq!(expected_count, count);
+    }
+
+    #[test]
+    fn test_quadrant_vertical_center_ignored() {
+        let location = IVec2 { x: 0, y: 51 };
+        let mut count = BotsInQuadrantCount::default();
+        let expected_count = BotsInQuadrantCount {
             ..Default::default()
         };
 
