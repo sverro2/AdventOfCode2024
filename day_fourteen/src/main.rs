@@ -64,15 +64,15 @@ fn part_1(bots: &Vec<SecurityBotConfig>) {
 }
 
 fn part_2(bots: &Vec<SecurityBotConfig>) {
-    // I admit. I didn't really solve it, but wanted to see the solution.
+    // I admit. I didn't really solve it, but wanted to SEE the solution.
     // I saw there was some cyclic action going on, noticed when frames appeared which looked non-random.
     // For my input, the first noisy "image" appeared at 27 seconds. A simular (bit slightly different)
     // picture appeared at 130. This repeated every 103 seconds.
-    // with the "script below" I just repeated this until I saw a christmas try appearing (pressing ctrl+c) and reading the number
+    // with the "script below" I just repeated this until I saw a christmas appearing (pressing ctrl+c) and reading the number
     //
-    // a "boring" programming only solution would have been to just see which frame had most connected bots/the least amount of separate groupos of bots
-    // 10403 was choses as maximum, because I noticed the cycles repeated every 10403 seconds
-    // these cycles resulted in perfectly identical images.
+    // a "boring" programming only solution would have been to just see which frame had most connected bots/the least amount of separate groups of bots
+    // 10403 was choses as maximum, because I calculated the cycle repeated every 10403 seconds
+    // after this cycle you got perfectly identical images.
     const FIRST_NON_RANDOM_LOOKING_OUTPUT_SECONDS: i32 = 27;
     const CYCLE: usize = 103;
 
@@ -115,13 +115,14 @@ fn calculate_location_after_simulation(
 ) -> IVec2 {
     let new_location: IVec2 = bot.location + bot.speed * iterations;
 
-    let wrapped_x = ((new_location.x % x_size) + x_size) % x_size;
-    let wrapped_y = ((new_location.y % y_size) + y_size) % y_size;
+    // Before I discovered rem_euclid, this also works very well!
+    // let wrapped_x = ((new_location.x % x_size) + x_size) % x_size;
+    // let wrapped_y = ((new_location.y % y_size) + y_size) % y_size;
 
-    IVec2 {
-        x: wrapped_x,
-        y: wrapped_y,
-    }
+    new_location.rem_euclid(IVec2 {
+        x: x_size,
+        y: y_size,
+    })
 }
 
 fn parse_restroom_bots() -> Vec<SecurityBotConfig> {
