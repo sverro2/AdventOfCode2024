@@ -6,7 +6,7 @@ use winnow::token::one_of;
 use winnow::Parser;
 
 fn main() {
-    let input = parse_input();
+    let mut input = parse_input();
 
     // Robot starts at middle of map
     let robot_start_position = IVec2 {
@@ -14,7 +14,10 @@ fn main() {
         y: (input.warehouse.height / 2 - 1) as i32,
     };
 
-    println!("{:#?}", input.warehouse);
+    println!("{:?}", input.warehouse.contents[1]);
+    input.warehouse.push(IVec2 { x: 24, y: 1 }, &BotMove::Right);
+    println!("{:?}", input.warehouse.contents[1]);
+
     println!("{:#?}", robot_start_position);
 }
 
@@ -84,13 +87,13 @@ fn parse_bot_direction_row(input: &mut &str) -> Result<Vec<BotMove>> {
     Ok(row_contents)
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct AoCInput {
     warehouse: Warehouse,
     bot_directions: Vec<BotMove>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 enum BotMove {
     Up,
     Right,
@@ -98,18 +101,87 @@ enum BotMove {
     Left,
 }
 
-#[derive(Debug)]
+impl BotMove {
+    fn get_next_vec(&self, current_location: IVec2) -> IVec2 {
+        match self {
+            BotMove::Up => IVec2 {
+                x: current_location.x,
+                y: current_location.y - 1,
+            },
+            BotMove::Right => IVec2 {
+                x: current_location.x + 1,
+                y: current_location.y,
+            },
+            BotMove::Down => IVec2 {
+                x: current_location.x,
+                y: current_location.y + 1,
+            },
+            BotMove::Left => IVec2 {
+                x: current_location.x - 1,
+                y: current_location.y,
+            },
+        }
+    }
+
+    fn get_prev_vec(&self, current_location: IVec2) -> IVec2 {
+        match self {
+            BotMove::Up => IVec2 {
+                x: current_location.x,
+                y: current_location.y + 1,
+            },
+            BotMove::Right => IVec2 {
+                x: current_location.x - 1,
+                y: current_location.y,
+            },
+            BotMove::Down => IVec2 {
+                x: current_location.x,
+                y: current_location.y - 1,
+            },
+            BotMove::Left => IVec2 {
+                x: current_location.x + 1,
+                y: current_location.y,
+            },
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 enum Content {
     Box,
     Empty,
     Wall,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 struct Warehouse {
     contents: Vec<Vec<Content>>,
     width: usize,
     height: usize,
 }
 
-struct Bot {}
+impl Warehouse {
+    fn push(&mut self, pusher_location: IVec2, direction: &BotMove) -> IVec2 {
+        let next_location = direction.get_next_vec(pusher_location);
+
+        let new_pusher_location =
+            match &self.contents[next_location.y as usize][next_location.x as usize] {
+                Content::Box => {
+                    let new_pusher_location = self.push(next_location, direction);
+                    self.move_item(next_location, new_pusher_location);
+                    direction.get_prev_vec(new_pusher_location)
+                }
+                Content::Empty => self.push(next_location, direction),
+                Content::Wall => pusher_location,
+            };
+
+        new_pusher_location
+    }
+
+    fn move_item(&mut self, source_location: IVec2, target_location: IVec2) {
+        let source_value = std::mem::replace(
+            &mut self.contents[source_location.y as usize][source_location.x as usize],
+            Content::Empty,
+        );
+        self.contents[target_location.y as usize][target_location.x as usize] = source_value;
+    }
+}
