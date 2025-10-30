@@ -32,7 +32,7 @@ impl Warehouse {
 
         // Check what content is at the next location
         match &self.contents[next_location.y as usize][next_location.x as usize] {
-            // In specific cases checks will branch out
+            // In specific cases moves will branch out
             Content::WideboxLeftPart if matches!(direction, BotMove::Up | BotMove::Down) => {
                 self.push_wide_box_vertical(next_location, direction, IVec2::X);
                 self.move_item(item_location, next_location);
