@@ -6,6 +6,10 @@ use winnow::stream::{LocatingSlice, Location};
 use winnow::token::one_of;
 use winnow::Parser;
 
+use crate::parser::{parse_bot_directions, parse_warehouse, parse_warehouse_v2};
+
+mod parser;
+
 fn main() {
     let input = include_str!("../input.txt");
 
@@ -16,11 +20,11 @@ fn main() {
     // };
 
     part_one(&input);
-    part_one(&input);
+    part_two(&input);
 }
 
 fn part_one(input_str: &str) {
-    let mut input = parse_input(input_str.to_owned());
+    let mut input = parse_input_part_1(input_str.to_owned());
     let mut robot_location = input
         .warehouse
         .get_bot_location()
@@ -40,7 +44,30 @@ fn part_one(input_str: &str) {
     println!("Part 1: {}", input.warehouse.calc_gps_all_crates());
 }
 
-fn parse_input(input: String) -> AoCInput {
+fn part_two(input_str: &str) {
+    let mut input = parse_input_part_2(input_str.to_owned());
+    let mut robot_location = input
+        .warehouse
+        .get_bot_location()
+        .expect("There should still be a robot");
+
+    input.warehouse.print();
+    // Go to each direction (specified in AoC input)
+    input.bot_directions.iter().for_each(|direction| {
+        // Push just before the robot, so the robot itself also gets pushed around the map
+        // New push location is still before the robot, so if we want the location of the robot we need to go one next
+        let pusher_location = direction.get_prev_vec(robot_location);
+        let next_pusher_location = input.warehouse.push(pusher_location, direction);
+
+        // Now we can see what next robot location is based on push location
+        robot_location = direction.get_next_vec(next_pusher_location);
+    });
+
+    input.warehouse.print();
+    println!("Part 2: {}", input.warehouse.calc_gps_all_crates());
+}
+
+fn parse_input_part_1(input: String) -> AoCInput {
     let mut input = input.as_str();
     let warehouse = parse_warehouse(&mut input).unwrap();
 
@@ -52,59 +79,16 @@ fn parse_input(input: String) -> AoCInput {
     }
 }
 
-fn parse_warehouse(input: &mut &str) -> Result<Warehouse> {
-    let contents: Vec<Vec<Content>> = repeat(0.., parse_warehouse_row).parse_next(input)?;
+fn parse_input_part_2(input: String) -> AoCInput {
+    let mut input = input.as_str();
+    let warehouse = parse_warehouse_v2(&mut input).unwrap();
 
-    let width = contents[0].len();
-    let height = contents.len();
+    let bot_directions = parse_bot_directions(&mut input).unwrap();
 
-    Ok(Warehouse {
-        contents,
-        width,
-        height,
-    })
-}
-
-fn parse_warehouse_row(input: &mut &str) -> Result<Vec<Content>> {
-    let row_contents = terminated(
-        repeat(
-            1..,
-            alt((
-                '@'.map(|_| Content::Robot),
-                '.'.map(|_| Content::Empty),
-                '#'.map(|_| Content::Wall),
-                'O'.map(|_| Content::Box),
-            )),
-        ),
-        newline,
-    )
-    .parse_next(input)?;
-
-    Ok(row_contents)
-}
-
-fn parse_bot_directions(input: &mut &str) -> Result<Vec<BotMove>> {
-    let contents: Vec<Vec<BotMove>> = repeat(.., parse_bot_direction_row).parse_next(input)?;
-
-    Ok(contents.into_iter().flatten().collect())
-}
-
-fn parse_bot_direction_row(input: &mut &str) -> Result<Vec<BotMove>> {
-    let row_contents = terminated(
-        repeat(
-            0..,
-            alt((
-                '^'.map(|_| BotMove::Up),
-                '>'.map(|_| BotMove::Right),
-                'v'.map(|_| BotMove::Down),
-                '<'.map(|_| BotMove::Left),
-            )),
-        ),
-        newline,
-    )
-    .parse_next(input)?;
-
-    Ok(row_contents)
+    AoCInput {
+        warehouse,
+        bot_directions,
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -142,6 +126,8 @@ impl BotMove {
 
 #[derive(Debug, Clone)]
 enum Content {
+    WideboxLeftPart,
+    WideBoxRightPart,
     Box,
     Empty,
     Wall,
@@ -156,42 +142,95 @@ struct Warehouse {
 }
 
 impl Warehouse {
-    fn push(&mut self, pusher_location: IVec2, direction: &BotMove) -> IVec2 {
+    pub fn push(&mut self, pusher_location: IVec2, direction: &BotMove) -> IVec2 {
+        if self.can_push(pusher_location, direction) {
+            self.push_unchecked(pusher_location, direction)
+        } else {
+            pusher_location
+        }
+    }
+
+    fn push_unchecked(&mut self, pusher_location: IVec2, direction: &BotMove) -> IVec2 {
         let next_location = direction.get_next_vec(pusher_location);
 
         // Check what content is at the next location
         let new_pusher_location =
             match &self.contents[next_location.y as usize][next_location.x as usize] {
-                // If there's a box, we need to move it to the location closest to the wall that is empty
-                Content::Box | Content::Robot => {
-                    // Recursively push the box
-                    let box_destination = self.push(next_location, direction);
+                // In specific cases checks will branch out
+                Content::WideboxLeftPart if matches!(direction, BotMove::Up | BotMove::Down) => {
+                    // Recursively push the pushable
+                    let pushable_destination = self.push_unchecked(next_location, direction);
 
                     // Move the box to its new location
-                    self.move_item(next_location, box_destination);
+                    self.move_item(next_location, pushable_destination);
 
-                    // Return the position where the pusher should end up (behind the box)
-                    direction.get_prev_vec(box_destination)
+                    // Move other part of the box as well
+                    let next_other_part = next_location + IVec2::X;
+                    let pushable_destination_other_parth =
+                        self.push_unchecked(next_other_part, direction);
+                    self.move_item(next_other_part, pushable_destination_other_parth);
+
+                    // Return the position where the pusher should end up (behind the pushable)
+                    direction.get_prev_vec(pushable_destination)
                 }
-                // Content::Robot => {
-                //     // Recursively push the box
-                //     let box_destination = self.push(next_location, direction);
+                Content::WideBoxRightPart if matches!(direction, BotMove::Up | BotMove::Down) => {
+                    // Recursively push the pushable
+                    let pushable_destination = self.push_unchecked(next_location, direction);
 
-                //     // Move the box to its new location
-                //     self.move_item(next_location, box_destination);
+                    // Move the box to its new location
+                    self.move_item(next_location, pushable_destination);
 
-                //     // Return the position where the pusher should end up (behind the box)
-                //     box_destination
-                // }
+                    // Move other part of the box as well
+                    let next_other_part = next_location - IVec2::X;
+                    let pushable_destination_other_parth =
+                        self.push_unchecked(next_other_part, direction);
+                    self.move_item(next_other_part, pushable_destination_other_parth);
 
-                // If the next space is empty, continue pushing in that direction
+                    // Return the position where the pusher should end up (behind the pushable)
+                    direction.get_prev_vec(pushable_destination)
+                }
+                // Other cases are a bit more simple
+                Content::Robot
+                | Content::Box
+                | Content::WideboxLeftPart
+                | Content::WideBoxRightPart => {
+                    // Recursively push the pushable
+                    let pushable_destination = self.push_unchecked(next_location, direction);
+
+                    // Move the box to its new location
+                    self.move_item(next_location, pushable_destination);
+
+                    // Return the position where the pusher should end up (behind the pushable)
+                    direction.get_prev_vec(pushable_destination)
+                }
                 Content::Empty => next_location,
-
-                // If there's a wall, we can't move, so stay at the current location
                 Content::Wall => pusher_location,
             };
 
         new_pusher_location
+    }
+
+    fn can_push(&mut self, pusher_location: IVec2, direction: &BotMove) -> bool {
+        let next_location = direction.get_next_vec(pusher_location);
+
+        match &self.contents[next_location.y as usize][next_location.x as usize] {
+            // In specific cases checks will branch out
+            Content::WideboxLeftPart if matches!(direction, BotMove::Up | BotMove::Down) => {
+                self.can_push(next_location, direction)
+                    && self.can_push(next_location + IVec2::X, direction)
+            }
+            Content::WideBoxRightPart if matches!(direction, BotMove::Up | BotMove::Down) => {
+                self.can_push(next_location, direction)
+                    && self.can_push(next_location - IVec2::X, direction)
+            }
+            // Other cases are a bit more simple
+            Content::Robot
+            | Content::Box
+            | Content::WideboxLeftPart
+            | Content::WideBoxRightPart => self.can_push(next_location, direction),
+            Content::Empty => true,
+            Content::Wall => false,
+        }
     }
 
     fn move_item(&mut self, source_location: IVec2, target_location: IVec2) {
@@ -206,7 +245,10 @@ impl Warehouse {
         (0..self.height)
             .flat_map(|row_index| {
                 (0..self.width).filter_map(move |column_index| {
-                    if matches!(self.contents[row_index][column_index], Content::Box) {
+                    if matches!(
+                        self.contents[row_index][column_index],
+                        Content::Box | Content::WideboxLeftPart
+                    ) {
                         Some(row_index * 100 + column_index)
                     } else {
                         None
@@ -226,6 +268,8 @@ impl Warehouse {
                         Content::Empty => '.',
                         Content::Wall => '#',
                         Content::Robot => '@',
+                        Content::WideboxLeftPart => '[',
+                        Content::WideBoxRightPart => ']',
                     }
                 );
             }
