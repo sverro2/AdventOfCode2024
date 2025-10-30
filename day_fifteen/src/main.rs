@@ -2,35 +2,48 @@ use glam::IVec2;
 use winnow::ascii::newline;
 use winnow::combinator::{alt, repeat, terminated};
 use winnow::error::Result;
+use winnow::stream::{LocatingSlice, Location};
 use winnow::token::one_of;
 use winnow::Parser;
 
 fn main() {
     let input = include_str!("../input.txt");
-    let input = parse_input(input);
 
-    // Robot starts at middle of map
-    let robot_start_position = IVec2 {
-        x: (input.warehouse.width / 2 - 1) as i32,
-        y: (input.warehouse.height / 2 - 1) as i32,
-    };
+    // // Robot starts at middle of map
+    // let robot_start_position = IVec2 {
+    //     x: (input.warehouse.width / 2 - 1) as i32,
+    //     y: (input.warehouse.height / 2 - 1) as i32,
+    // };
 
-    part_one(robot_start_position, input.to_owned());
+    part_one(&input);
+    part_one(&input);
 }
 
-fn part_one(robot_start: IVec2, mut input: AoCInput) {
-    let mut robot_location = robot_start;
+fn part_one(input_str: &str) {
+    let mut input = parse_input(input_str.to_owned());
+    let mut robot_location = input
+        .warehouse
+        .get_bot_location()
+        .expect("There should be a robot");
 
     // Go to each direction (specified in AoC input)
     input.bot_directions.iter().for_each(|direction| {
-        robot_location = input.warehouse.push(robot_location, direction);
+        // Push just before the robot, so the robot itself also gets pushed around the map
+        // New push location is still before the robot, so if we want the location of the robot we need to go one next
+        let pusher_location = direction.get_prev_vec(robot_location);
+        let next_pusher_location = input.warehouse.push(pusher_location, direction);
+
+        // Now we can see what next robot location is based on push location
+        robot_location = direction.get_next_vec(next_pusher_location);
     });
 
     println!("Part 1: {}", input.warehouse.calc_gps_all_crates());
 }
 
-fn parse_input(mut input: &str) -> AoCInput {
+fn parse_input(input: String) -> AoCInput {
+    let mut input = input.as_str();
     let warehouse = parse_warehouse(&mut input).unwrap();
+
     let bot_directions = parse_bot_directions(&mut input).unwrap();
 
     AoCInput {
@@ -57,7 +70,8 @@ fn parse_warehouse_row(input: &mut &str) -> Result<Vec<Content>> {
         repeat(
             1..,
             alt((
-                one_of(('.', '@')).map(|_| Content::Empty),
+                '@'.map(|_| Content::Robot),
+                '.'.map(|_| Content::Empty),
                 '#'.map(|_| Content::Wall),
                 'O'.map(|_| Content::Box),
             )),
@@ -131,6 +145,7 @@ enum Content {
     Box,
     Empty,
     Wall,
+    Robot,
 }
 
 #[derive(Debug, Clone)]
@@ -148,7 +163,7 @@ impl Warehouse {
         let new_pusher_location =
             match &self.contents[next_location.y as usize][next_location.x as usize] {
                 // If there's a box, we need to move it to the location closest to the wall that is empty
-                Content::Box => {
+                Content::Box | Content::Robot => {
                     // Recursively push the box
                     let box_destination = self.push(next_location, direction);
 
@@ -158,6 +173,16 @@ impl Warehouse {
                     // Return the position where the pusher should end up (behind the box)
                     direction.get_prev_vec(box_destination)
                 }
+                // Content::Robot => {
+                //     // Recursively push the box
+                //     let box_destination = self.push(next_location, direction);
+
+                //     // Move the box to its new location
+                //     self.move_item(next_location, box_destination);
+
+                //     // Return the position where the pusher should end up (behind the box)
+                //     box_destination
+                // }
 
                 // If the next space is empty, continue pushing in that direction
                 Content::Empty => next_location,
@@ -200,10 +225,28 @@ impl Warehouse {
                         Content::Box => 'O',
                         Content::Empty => '.',
                         Content::Wall => '#',
+                        Content::Robot => '@',
                     }
                 );
             }
             println!();
         }
     }
+
+    fn get_bot_location(&self) -> Option<IVec2> {
+        self.contents
+            .iter()
+            .enumerate()
+            .find_map(|(row_index, row)| {
+                row.iter().enumerate().find_map(|(col_index, col)| {
+                    if matches!(col, Content::Robot) {
+                        Some(IVec2::new(col_index as i32, row_index as i32))
+                    } else {
+                        None
+                    }
+                })
+            })
+    }
+
+    // fn get_robot_start_location
 }
