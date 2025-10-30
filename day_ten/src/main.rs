@@ -61,7 +61,7 @@ fn main() {
             row.iter()
                 .enumerate()
                 .filter(|(_, &value)| value == 0)
-                .map(move |(col_index, _)| (Coordinate::new(col_index, row_index)))
+                .map(move |(col_index, _)| Coordinate::new(col_index, row_index))
         })
         .collect();
 

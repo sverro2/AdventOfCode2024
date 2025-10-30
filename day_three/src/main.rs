@@ -73,7 +73,7 @@ fn exercise_2() {
     let all_multiplications_sum: i32 = valid_multiplier_calls
         .captures_iter(input)
         .filter_map(|captured| {
-            let index_of_capture = captured.get(0).map(|i| (i.start())).unwrap();
+            let index_of_capture = captured.get(0).map(|i| i.start()).unwrap();
             let (_, [x, y]) = captured.extract();
 
             let call = MultiplierCall {

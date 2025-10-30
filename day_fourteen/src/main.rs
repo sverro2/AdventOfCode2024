@@ -44,7 +44,7 @@ fn main() {
     part_2(&parsed_bots);
 }
 
-fn part_1(bots: &Vec<SecurityBotConfig>) {
+fn part_1(bots: &[SecurityBotConfig]) {
     let mut count = BotsInQuadrantCount::default();
 
     bots.iter()
@@ -63,7 +63,7 @@ fn part_1(bots: &Vec<SecurityBotConfig>) {
     println!("{:?}", safety_factor);
 }
 
-fn part_2(bots: &Vec<SecurityBotConfig>) {
+fn part_2(bots: &[SecurityBotConfig]) {
     // I admit. I didn't really solve it, but wanted to SEE the solution.
     // I saw there was some cyclic action going on, noticed when frames appeared which looked non-random.
     // For my input, the first noisy "image" appeared at 27 seconds. A simular (bit slightly different)
@@ -94,7 +94,7 @@ fn part_2(bots: &Vec<SecurityBotConfig>) {
                     print!(" ")
                 }
             });
-            println!("");
+            println!();
         });
         println!(
             "Seconds: {}",
