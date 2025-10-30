@@ -17,43 +17,51 @@ impl Warehouse {
         }
     }
 
-    pub fn push(&mut self, pusher_location: IVec2, direction: &BotMove) -> IVec2 {
-        if self.can_push(pusher_location, direction) {
-            self.push_unchecked(pusher_location, direction)
+    pub fn push(&mut self, item_location: IVec2, direction: &BotMove) -> IVec2 {
+        let next_location = direction.get_next_vec(item_location);
+
+        if self.can_push(next_location, direction) {
+            self.push_unchecked(item_location, direction)
         } else {
-            pusher_location
+            item_location
         }
     }
 
-    fn push_unchecked(&mut self, pusher_location: IVec2, direction: &BotMove) -> IVec2 {
-        let next_location = direction.get_next_vec(pusher_location);
+    fn push_unchecked(&mut self, item_location: IVec2, direction: &BotMove) -> IVec2 {
+        let next_location = direction.get_next_vec(item_location);
 
         // Check what content is at the next location
-
         match &self.contents[next_location.y as usize][next_location.x as usize] {
             // In specific cases checks will branch out
             Content::WideboxLeftPart if matches!(direction, BotMove::Up | BotMove::Down) => {
-                self.push_wide_box_vertical(next_location, direction, IVec2::X)
+                self.push_wide_box_vertical(next_location, direction, IVec2::X);
+                self.move_item(item_location, next_location);
+                next_location
             }
             Content::WideBoxRightPart if matches!(direction, BotMove::Up | BotMove::Down) => {
-                self.push_wide_box_vertical(next_location, direction, -IVec2::X)
+                self.push_wide_box_vertical(next_location, direction, -IVec2::X);
+                self.move_item(item_location, next_location);
+                next_location
             }
             // Other cases are a bit more simple
             Content::Robot
             | Content::Box
             | Content::WideboxLeftPart
             | Content::WideBoxRightPart => {
-                // Recursively push the pushable
-                let pushable_destination = self.push_unchecked(next_location, direction);
+                // Recursively push the item at next location
+                self.push_unchecked(next_location, direction);
 
-                // Move the box to its new location
-                self.move_item(next_location, pushable_destination);
+                // Move our item to the next location
+                self.move_item(item_location, next_location);
 
-                // Return the position where the pusher should end up (behind the pushable)
-                direction.get_prev_vec(pushable_destination)
+                next_location
             }
-            Content::Empty => next_location,
-            Content::Wall => pusher_location,
+            Content::Empty => {
+                // Move our item to the empty space
+                self.move_item(item_location, next_location);
+                next_location
+            }
+            Content::Wall => item_location,
         }
     }
 
@@ -62,32 +70,25 @@ impl Warehouse {
         box_part_location: IVec2,
         direction: &BotMove,
         other_part_offset: IVec2,
-    ) -> IVec2 {
-        // Recursively push the pushable
-        let pushable_destination = self.push_unchecked(box_part_location, direction);
+    ) {
+        // Recursively push both parts of the wide box starting with the immediatally touching part
+        self.push_unchecked(box_part_location, direction);
 
-        // Move the box to its new location
-        self.move_item(box_part_location, pushable_destination);
-
-        // Move other part of the box as well
+        // And then the other part of the box
         let other_part_location = box_part_location + other_part_offset;
-        let other_part_destination = self.push_unchecked(other_part_location, direction);
-        self.move_item(other_part_location, other_part_destination);
-
-        // Return the position where the pusher should end up (behind the pushable)
-        direction.get_prev_vec(pushable_destination)
+        self.push_unchecked(other_part_location, direction);
     }
 
-    fn can_push(&mut self, pusher_location: IVec2, direction: &BotMove) -> bool {
-        let next_location = direction.get_next_vec(pusher_location);
-
-        match &self.contents[next_location.y as usize][next_location.x as usize] {
+    fn can_push(&mut self, location: IVec2, direction: &BotMove) -> bool {
+        match &self.contents[location.y as usize][location.x as usize] {
             // In specific cases checks will branch out
             Content::WideboxLeftPart if matches!(direction, BotMove::Up | BotMove::Down) => {
+                let next_location = direction.get_next_vec(location);
                 self.can_push(next_location, direction)
                     && self.can_push(next_location + IVec2::X, direction)
             }
             Content::WideBoxRightPart if matches!(direction, BotMove::Up | BotMove::Down) => {
+                let next_location = direction.get_next_vec(location);
                 self.can_push(next_location, direction)
                     && self.can_push(next_location - IVec2::X, direction)
             }
@@ -95,7 +96,10 @@ impl Warehouse {
             Content::Robot
             | Content::Box
             | Content::WideboxLeftPart
-            | Content::WideBoxRightPart => self.can_push(next_location, direction),
+            | Content::WideBoxRightPart => {
+                let next_location = direction.get_next_vec(location);
+                self.can_push(next_location, direction)
+            }
             Content::Empty => true,
             Content::Wall => false,
         }

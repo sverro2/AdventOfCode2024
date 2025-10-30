@@ -24,13 +24,8 @@ fn part_one(input_str: &str) {
 
     // Go to each direction (specified in AoC input)
     input.bot_directions.iter().for_each(|direction| {
-        // Push just before the robot, so the robot itself also gets pushed around the map
-        // New push location is still before the robot, so if we want the location of the robot we need to go one next
-        let pusher_location = direction.get_prev_vec(robot_location);
-        let next_pusher_location = input.warehouse.push(pusher_location, direction);
-
-        // Now we can see what next robot location is based on push location
-        robot_location = direction.get_next_vec(next_pusher_location);
+        // Try to push the robot in the given direction
+        robot_location = input.warehouse.push(robot_location, direction);
     });
 
     println!("Part 1: {}", input.warehouse.calc_gps_all_crates());
@@ -45,13 +40,8 @@ fn part_two(input_str: &str) {
 
     // Go to each direction (specified in AoC input)
     input.bot_directions.iter().for_each(|direction| {
-        // Push just before the robot, so the robot itself also gets pushed around the map
-        // New push location is still before the robot, so if we want the location of the robot we need to go one next
-        let pusher_location = direction.get_prev_vec(robot_location);
-        let next_pusher_location = input.warehouse.push(pusher_location, direction);
-
-        // Now we can see what next robot location is based on push location
-        robot_location = direction.get_next_vec(next_pusher_location);
+        // Try to push the robot in the given direction
+        robot_location = input.warehouse.push(robot_location, direction);
     });
 
     println!("Part 2: {}", input.warehouse.calc_gps_all_crates());
@@ -107,10 +97,6 @@ impl BotMove {
 
     fn get_next_vec(&self, current_location: IVec2) -> IVec2 {
         current_location + self.direction_vector()
-    }
-
-    fn get_prev_vec(&self, current_location: IVec2) -> IVec2 {
-        current_location - self.direction_vector()
     }
 }
 
