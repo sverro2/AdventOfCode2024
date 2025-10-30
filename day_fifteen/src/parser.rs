@@ -11,11 +11,7 @@ pub fn parse_warehouse(input: &mut &str) -> Result<Warehouse> {
     let width = contents[0].len();
     let height = contents.len();
 
-    Ok(Warehouse {
-        contents,
-        width,
-        height,
-    })
+    Ok(Warehouse::new(contents, width, height))
 }
 
 fn parse_warehouse_row(input: &mut &str) -> Result<Vec<Content>> {
@@ -42,11 +38,7 @@ pub fn parse_warehouse_v2(input: &mut &str) -> Result<Warehouse> {
     let width = contents[0].len();
     let height = contents.len();
 
-    Ok(Warehouse {
-        contents,
-        width,
-        height,
-    })
+    Ok(Warehouse::new(contents, width, height))
 }
 
 fn parse_warehouse_row_v2(input: &mut &str) -> Result<Vec<Content>> {
