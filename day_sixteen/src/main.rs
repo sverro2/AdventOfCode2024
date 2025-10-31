@@ -1,8 +1,10 @@
 use std::collections::HashSet;
 
+use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
+
 mod parser;
 
-#[derive(PartialEq, Eq, Hash, Clone, Debug)]
+#[derive(PartialEq, Eq, Hash, Clone, Debug, Copy)]
 struct Location {
     x: usize,
     y: usize,
@@ -57,6 +59,15 @@ struct PlayerMove {
     cost: u32,
 }
 
+impl PlayerMove {
+    pub fn to_player(&self) -> Player {
+        Player {
+            location: self.new_location,
+            direction: self.direction,
+        }
+    }
+}
+
 struct Player {
     location: Location,
     direction: Direction,
@@ -89,30 +100,49 @@ fn main() {
 
 fn first_star(input: &AoCInput) {
     // println!("So the possible directions are: {possible_directions:?}");
-    calculate_path_score(&input.start, HashSet::new(), &input.walls);
+    calculate_path_score(&input.start, input.finish, &input.walls, HashSet::new(), 0);
 }
 
 fn calculate_path_score(
     player: &Player,
-    visited: HashSet<Location>,
+    finish: Location,
     walls: &HashSet<Location>,
+    mut visited: HashSet<Location>,
+    current_score: u32,
 ) -> Option<u32> {
     let moves = get_possible_moves(&player, &visited, walls);
-    println!("{moves:?}");
-    todo!()
+    visited.insert(player.location);
+
+    // I guess this will work, but we somehow needs to mark a function finished if we already found a lower score.
+    if player.location == finish {
+        Some(current_score)
+    } else {
+        moves
+            .par_iter()
+            .filter_map(|m| {
+                calculate_path_score(
+                    &m.to_player(),
+                    finish,
+                    walls,
+                    visited.to_owned(),
+                    current_score + m.cost,
+                )
+            })
+            .min()
+    }
 }
 
 fn get_possible_moves(
     player: &Player,
-    visited: &HashSet<Location>,
     walls: &HashSet<Location>,
+    visited: &HashSet<Location>,
 ) -> Vec<PlayerMove> {
     ALL_DIRECTIONS
         .iter()
         .filter_map(|direction| {
             let possible_location_to_travel = player.location.travel(&direction);
             if walls.contains(&possible_location_to_travel)
-                | visited.contains(&possible_location_to_travel)
+                || visited.contains(&possible_location_to_travel)
             {
                 None
             } else {

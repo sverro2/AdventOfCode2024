@@ -117,6 +117,9 @@ dependencies = [
 [[package]]
 name = "day_sixteen"
 version = "0.1.0"
+dependencies = [
+ "rayon",
+]
 
 [[package]]
 name = "day_ten"
