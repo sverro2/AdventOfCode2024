@@ -1,7 +1,5 @@
 use std::collections::HashSet;
 
-use rayon::iter::{IntoParallelRefIterator, ParallelIterator};
-
 mod parser;
 
 #[derive(PartialEq, Eq, Hash, Clone, Debug, Copy)]
@@ -68,6 +66,7 @@ impl PlayerMove {
     }
 }
 
+#[derive(Debug)]
 struct Player {
     location: Location,
     direction: Direction,
@@ -100,7 +99,16 @@ fn main() {
 
 fn first_star(input: &AoCInput) {
     // println!("So the possible directions are: {possible_directions:?}");
-    calculate_path_score(&input.start, input.finish, &input.walls, HashSet::new(), 0);
+    let score = calculate_path_score(
+        &input.start,
+        input.finish,
+        &input.walls,
+        HashSet::new(),
+        0,
+        u32::MAX,
+    );
+
+    println!("Lowest score is {score:?}");
 }
 
 fn calculate_path_score(
@@ -109,26 +117,36 @@ fn calculate_path_score(
     walls: &HashSet<Location>,
     mut visited: HashSet<Location>,
     current_score: u32,
-) -> Option<u32> {
+    lowest_score_to_finish: u32,
+) -> u32 {
     let moves = get_possible_moves(&player, &visited, walls);
     visited.insert(player.location);
 
-    // I guess this will work, but we somehow needs to mark a function finished if we already found a lower score.
+    // This will work, but veeeery slowly
     if player.location == finish {
-        Some(current_score)
+        current_score
     } else {
-        moves
-            .par_iter()
-            .filter_map(|m| {
-                calculate_path_score(
-                    &m.to_player(),
-                    finish,
-                    walls,
-                    visited.to_owned(),
-                    current_score + m.cost,
-                )
-            })
-            .min()
+        moves.iter().fold(
+            lowest_score_to_finish,
+            |lowest_score_to_finish: u32, m: &PlayerMove| {
+                let next_chamber_score = current_score + m.cost;
+
+                if lowest_score_to_finish < next_chamber_score {
+                    lowest_score_to_finish
+                } else {
+                    let score_to_finish = calculate_path_score(
+                        &m.to_player(),
+                        finish,
+                        walls,
+                        visited.to_owned(),
+                        next_chamber_score,
+                        lowest_score_to_finish,
+                    );
+
+                    lowest_score_to_finish.min(score_to_finish)
+                }
+            },
+        )
     }
 }
 
@@ -167,12 +185,56 @@ fn calculate_move_cost(old_direction: Direction, new_direction: Direction) -> u3
         .position(|&direction| direction == new_direction)
         .expect("all directions");
 
-    let turns_required = if new_direction_index >= old_direction_index {
-        new_direction_index - old_direction_index
-    } else {
-        ALL_DIRECTIONS.len() - old_direction_index + new_direction_index
-    };
+    let turn_diff = old_direction_index.abs_diff(new_direction_index);
+    let amount_of_turns = turn_diff.min(ALL_DIRECTIONS.len() - turn_diff);
 
     // Every step costs 1, every turn 1000
-    turns_required as u32 * 1000 + 1
+    amount_of_turns as u32 * 1000 + 1
+}
+
+#[cfg(test)]
+mod test {
+    use crate::calculate_move_cost;
+
+    #[test]
+    fn north_to_east_cost() {
+        let result = calculate_move_cost(crate::Direction::North, crate::Direction::East);
+
+        assert_eq!(result, 1001)
+    }
+
+    #[test]
+    fn east_to_north_cost() {
+        let result = calculate_move_cost(crate::Direction::East, crate::Direction::North);
+
+        assert_eq!(result, 1001)
+    }
+
+    #[test]
+    fn south_to_north_cost() {
+        let result = calculate_move_cost(crate::Direction::North, crate::Direction::South);
+
+        assert_eq!(result, 2001)
+    }
+
+    #[test]
+    fn north_to_south_cost() {
+        let result = calculate_move_cost(crate::Direction::South, crate::Direction::North);
+
+        assert_eq!(result, 2001)
+    }
+
+    #[test]
+    fn east_to_east_cost() {
+        let result = calculate_move_cost(crate::Direction::East, crate::Direction::East);
+
+        assert_eq!(result, 1)
+    }
+
+    #[test]
+    fn east_to_west_cost() {
+        let result = calculate_move_cost(crate::Direction::East, crate::Direction::West);
+
+        assert_eq!(result, 2001)
+    }
 }
