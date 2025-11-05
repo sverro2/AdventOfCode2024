@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use crate::{AoCInput, Location};
+use crate::{AoCInput, Position};
 
 pub fn parse_input(input: &str) -> AoCInput {
     let mut start = None;
@@ -10,10 +10,10 @@ pub fn parse_input(input: &str) -> AoCInput {
     for (line_index, line) in input.lines().enumerate() {
         for (column_index, char) in line.chars().enumerate() {
             match char {
-                'S' => start = Some(Location::new(column_index, line_index)),
-                'E' => finish = Some(Location::new(column_index, line_index)),
+                'S' => start = Some(Position::new(column_index, line_index)),
+                'E' => finish = Some(Position::new(column_index, line_index)),
                 '#' => {
-                    walls.insert(Location::new(column_index, line_index));
+                    walls.insert(Position::new(column_index, line_index));
                 }
                 _ => {}
             }
