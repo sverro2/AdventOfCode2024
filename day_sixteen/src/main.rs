@@ -97,6 +97,126 @@ fn main() {
     first_star_second_try(&input);
 }
 
+fn first_star_second_try(input: &AoCInput) {
+    if let Some(cost) = dijkstra_with_turn_score(input.start.to_owned(), input.finish, &input.walls)
+    {
+        println!("Minimum fuel cost to goal: {}", cost);
+    } else {
+        println!("Goal is unreachable");
+    }
+}
+
+fn dijkstra_with_turn_score(
+    start: PlayerState,
+    goal: Position,
+    walls: &HashSet<Position>,
+) -> Option<u32> {
+    let mut costs: HashMap<PlayerState, u32> = HashMap::new();
+    let mut frontier = BinaryHeap::new();
+
+    costs.insert(start.to_owned(), 0);
+    frontier.push(Reverse((0, start)));
+
+    while let Some(Reverse((cost, current))) = frontier.pop() {
+        if current.position == goal {
+            return Some(cost);
+        }
+
+        // Skip if we already found a cheaper path to this state
+        if let Some(&existing) = costs.get(&current)
+            && cost > existing
+        {
+            continue;
+        }
+
+        for possible_move in get_possible_moves_dijkstra(&current, walls) {
+            let next_player_state = possible_move.to_player();
+            let next_cost = cost + possible_move.cost;
+
+            if costs.get(&next_player_state).is_none_or(|&c| next_cost < c) {
+                costs.insert(next_player_state.to_owned(), next_cost);
+                frontier.push(Reverse((next_cost, next_player_state)));
+            }
+        }
+    }
+
+    None
+}
+
+fn get_possible_moves_dijkstra(player: &PlayerState, walls: &HashSet<Position>) -> Vec<PlayerMove> {
+    ALL_HEADINGS
+        .iter()
+        .filter_map(|direction| {
+            let possible_location_to_travel = player.position.travel(direction);
+
+            walls
+                .contains(&possible_location_to_travel)
+                .not()
+                .then(|| PlayerMove {
+                    heading: *direction,
+                    new_position: possible_location_to_travel,
+                    cost: calculate_move_cost(player.heading, *direction),
+                })
+        })
+        .collect()
+}
+
+fn calculate_move_cost(old_direction: Heading, new_direction: Heading) -> u32 {
+    let turn_diff = (old_direction as isize).abs_diff(new_direction as isize);
+    let amount_of_turns = turn_diff.min(ALL_HEADINGS.len() - turn_diff);
+
+    // Every step costs 1, every turn 1000
+    amount_of_turns as u32 * 1000 + 1
+}
+
+#[cfg(test)]
+mod test {
+    use crate::calculate_move_cost;
+
+    #[test]
+    fn north_to_east_cost() {
+        let result = calculate_move_cost(crate::Heading::North, crate::Heading::East);
+
+        assert_eq!(result, 1001)
+    }
+
+    #[test]
+    fn east_to_north_cost() {
+        let result = calculate_move_cost(crate::Heading::East, crate::Heading::North);
+
+        assert_eq!(result, 1001)
+    }
+
+    #[test]
+    fn south_to_north_cost() {
+        let result = calculate_move_cost(crate::Heading::North, crate::Heading::South);
+
+        assert_eq!(result, 2001)
+    }
+
+    #[test]
+    fn north_to_south_cost() {
+        let result = calculate_move_cost(crate::Heading::South, crate::Heading::North);
+
+        assert_eq!(result, 2001)
+    }
+
+    #[test]
+    fn east_to_east_cost() {
+        let result = calculate_move_cost(crate::Heading::East, crate::Heading::East);
+
+        assert_eq!(result, 1)
+    }
+
+    #[test]
+    fn east_to_west_cost() {
+        let result = calculate_move_cost(crate::Heading::East, crate::Heading::West);
+
+        assert_eq!(result, 2001)
+    }
+}
+
+// Keeping the old slow solution arround. Just as a memory that depth first searches can be catastrophic sometimes.
 #[allow(dead_code)]
 fn first_star(input: &AoCInput) {
     // println!("So the possible directions are: {possible_directions:?}");
@@ -173,131 +293,4 @@ fn get_possible_moves(
             }
         })
         .collect()
-}
-
-fn calculate_move_cost(old_direction: Heading, new_direction: Heading) -> u32 {
-    let old_direction_index = ALL_HEADINGS
-        .iter()
-        .position(|&direction| direction == old_direction)
-        .expect("all directions");
-
-    let new_direction_index = ALL_HEADINGS
-        .iter()
-        .position(|&direction| direction == new_direction)
-        .expect("all directions");
-
-    let turn_diff = old_direction_index.abs_diff(new_direction_index);
-    let amount_of_turns = turn_diff.min(ALL_HEADINGS.len() - turn_diff);
-
-    // Every step costs 1, every turn 1000
-    amount_of_turns as u32 * 1000 + 1
-}
-
-fn first_star_second_try(input: &AoCInput) {
-    if let Some(cost) = dijkstra_with_turn_score(input.start.to_owned(), input.finish, &input.walls)
-    {
-        println!("Minimum fuel cost to goal: {}", cost);
-    } else {
-        println!("Goal is unreachable");
-    }
-}
-
-fn dijkstra_with_turn_score(
-    start: PlayerState,
-    goal: Position,
-    walls: &HashSet<Position>,
-) -> Option<u32> {
-    let mut costs: HashMap<PlayerState, u32> = HashMap::new();
-    let mut frontier = BinaryHeap::new();
-
-    costs.insert(start.to_owned(), 0);
-    frontier.push(Reverse((0, start)));
-
-    while let Some(Reverse((cost, current))) = frontier.pop() {
-        if current.position == goal {
-            return Some(cost);
-        }
-
-        // Skip if we already found a cheaper path to this state
-        if let Some(&existing) = costs.get(&current)
-            && cost > existing
-        {
-            continue;
-        }
-
-        for possible_move in get_possible_moves_dijkstra(&current, walls) {
-            let next_player_state = possible_move.to_player();
-            let next_cost = cost + possible_move.cost;
-            if costs.get(&next_player_state).is_none_or(|&c| next_cost < c) {
-                costs.insert(next_player_state.to_owned(), next_cost);
-                frontier.push(Reverse((next_cost, next_player_state)));
-            }
-        }
-    }
-
-    None
-}
-
-fn get_possible_moves_dijkstra(player: &PlayerState, walls: &HashSet<Position>) -> Vec<PlayerMove> {
-    ALL_HEADINGS
-        .iter()
-        .filter_map(|direction| {
-            let possible_location_to_travel = player.position.travel(direction);
-            walls
-                .contains(&possible_location_to_travel)
-                .not()
-                .then(|| PlayerMove {
-                    heading: *direction,
-                    new_position: possible_location_to_travel,
-                    cost: calculate_move_cost(player.heading, *direction),
-                })
-        })
-        .collect()
-}
-
-#[cfg(test)]
-mod test {
-    use crate::calculate_move_cost;
-
-    #[test]
-    fn north_to_east_cost() {
-        let result = calculate_move_cost(crate::Heading::North, crate::Heading::East);
-
-        assert_eq!(result, 1001)
-    }
-
-    #[test]
-    fn east_to_north_cost() {
-        let result = calculate_move_cost(crate::Heading::East, crate::Heading::North);
-
-        assert_eq!(result, 1001)
-    }
-
-    #[test]
-    fn south_to_north_cost() {
-        let result = calculate_move_cost(crate::Heading::North, crate::Heading::South);
-
-        assert_eq!(result, 2001)
-    }
-
-    #[test]
-    fn north_to_south_cost() {
-        let result = calculate_move_cost(crate::Heading::South, crate::Heading::North);
-
-        assert_eq!(result, 2001)
-    }
-
-    #[test]
-    fn east_to_east_cost() {
-        let result = calculate_move_cost(crate::Heading::East, crate::Heading::East);
-
-        assert_eq!(result, 1)
-    }
-
-    #[test]
-    fn east_to_west_cost() {
-        let result = calculate_move_cost(crate::Heading::East, crate::Heading::West);
-
-        assert_eq!(result, 2001)
-    }
 }
