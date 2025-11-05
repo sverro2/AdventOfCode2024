@@ -97,6 +97,7 @@ fn main() {
     first_star_second_try(&input);
 }
 
+#[allow(dead_code)]
 fn first_star(input: &AoCInput) {
     // println!("So the possible directions are: {possible_directions:?}");
     let score = calculate_path_score(
@@ -111,7 +112,6 @@ fn first_star(input: &AoCInput) {
     println!("Lowest score is {score:?}");
 }
 
-#[allow(dead_code)]
 fn calculate_path_score(
     player: &PlayerState,
     finish: Position,
@@ -120,7 +120,7 @@ fn calculate_path_score(
     current_score: u32,
     lowest_score_to_finish: u32,
 ) -> u32 {
-    let moves = get_possible_moves(&player, &visited, walls);
+    let moves = get_possible_moves(player, &visited, walls);
     visited.insert(player.position);
 
     // This will work, but veeeery slowly, even with the optimalisation that stops searching if totalscore exceeds current minima.
@@ -159,7 +159,7 @@ fn get_possible_moves(
     ALL_HEADINGS
         .iter()
         .filter_map(|direction| {
-            let possible_location_to_travel = player.position.travel(&direction);
+            let possible_location_to_travel = player.position.travel(direction);
             if walls.contains(&possible_location_to_travel)
                 || visited.contains(&possible_location_to_travel)
             {
@@ -219,19 +219,16 @@ fn dijkstra_with_turn_score(
         }
 
         // Skip if we already found a cheaper path to this state
-        if let Some(&existing) = costs.get(&current) {
-            if cost > existing {
-                continue;
-            }
+        if let Some(&existing) = costs.get(&current)
+            && cost > existing
+        {
+            continue;
         }
 
         for possible_move in get_possible_moves_dijkstra(&current, walls) {
             let next_player_state = possible_move.to_player();
             let next_cost = cost + possible_move.cost;
-            if costs
-                .get(&next_player_state)
-                .map_or(true, |&c| next_cost < c)
-            {
+            if costs.get(&next_player_state).is_none_or(|&c| next_cost < c) {
                 costs.insert(next_player_state.to_owned(), next_cost);
                 frontier.push(Reverse((next_cost, next_player_state)));
             }
@@ -245,7 +242,7 @@ fn get_possible_moves_dijkstra(player: &PlayerState, walls: &HashSet<Position>) 
     ALL_HEADINGS
         .iter()
         .filter_map(|direction| {
-            let possible_location_to_travel = player.position.travel(&direction);
+            let possible_location_to_travel = player.position.travel(direction);
             walls
                 .contains(&possible_location_to_travel)
                 .not()
