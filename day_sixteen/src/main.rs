@@ -6,6 +6,9 @@ use std::{
 
 mod parser;
 
+const TURN_COST: u32 = 1000;
+const MOVE_COST: u32 = 1;
+
 fn main() {
     let input = parser::parse_input(include_str!("../input.txt"));
     // first_star(&input); // see bottom of file to see first attempt
@@ -26,28 +29,35 @@ fn second_star(input: &AoCInput) {
     if let Some(scores) =
         dijkstra_with_turn_score(input.start.to_owned(), input.finish, &input.walls)
     {
-        let tiles = best_path_tiles(&scores.all, input.start.position, input.finish);
+        let tiles = shortest_path_tiles(&scores.all, input.start.position, input.finish);
+
+        // Made a printer to debug some lower-then-expected values
+        // print_shortest_paths(&input.walls, &tiles);
+
         println!("Amount of tiles on shortest paths: {}", tiles.len());
-
-        // let x_max_index = input.walls.iter().map(|i| i.x).max().unwrap();
-        // let y_max_index = input.walls.iter().map(|i| i.y).max().unwrap();
-
-        // (0..=y_max_index).for_each(|y| {
-        //     (0..=x_max_index).to_owned().for_each(|x| {
-        //         let print_pos = Position { x, y };
-        //         if input.walls.contains(&print_pos) {
-        //             print!("#");
-        //         } else if tiles.contains(&print_pos) {
-        //             print!("O");
-        //         } else {
-        //             print!(" ");
-        //         }
-        //     });
-        //     println!();
-        // });
     } else {
         println!("Goal is unreachable");
     }
+}
+
+#[allow(dead_code)]
+fn print_shortest_paths(walls: &HashSet<Position>, shortest_path_tiles: &HashSet<Position>) {
+    let x_max_index = walls.iter().map(|i| i.x).max().unwrap();
+    let y_max_index = walls.iter().map(|i| i.y).max().unwrap();
+
+    (0..=y_max_index).for_each(|y| {
+        (0..=x_max_index).to_owned().for_each(|x| {
+            let print_pos = Position { x, y };
+            if walls.contains(&print_pos) {
+                print!("#");
+            } else if shortest_path_tiles.contains(&print_pos) {
+                print!("O");
+            } else {
+                print!(" ");
+            }
+        });
+        println!();
+    });
 }
 
 fn dijkstra_with_turn_score(
@@ -112,12 +122,12 @@ fn calculate_move_cost(old_direction: Heading, new_direction: Heading) -> u32 {
     let amount_of_turns = turn_diff.min(ALL_HEADINGS.len() - turn_diff);
 
     // Every step costs 1, every turn 1000
-    amount_of_turns as u32 * 1000 + 1
+    amount_of_turns as u32 * TURN_COST + MOVE_COST
 }
 
 type ScoresForPositionMap = HashMap<Position, Vec<(Heading, u32)>>;
 
-fn best_path_tiles(
+fn shortest_path_tiles(
     costs: &HashMap<PlayerState, u32>,
     start: Position,
     finish: Position,
@@ -162,22 +172,25 @@ fn find_best_path_tiles_by_backtracking(
         ))
         .iter()
         .map(|(heading, score)| {
+            // Scores can only compared when the point to the 'winning' heading.
             if let Some(previous_heading) = previous_heading.as_ref()
                 && previous_heading != heading
             {
-                (heading, score + 1000)
+                (heading, score + TURN_COST)
             } else {
                 (heading, *score)
             }
         })
         .collect();
 
+    // We are only interested in next tile(s) which have the smallest score
     let min_score = postition_scores
         .iter()
         .map(|(_, score)| *score)
         .min()
         .expect("Every position in a shortest path should have a score");
 
+    // Check each possibility
     for (heading, score) in postition_scores {
         let has_min_score = score == min_score;
         let next_position = current_position.travel(&heading.opposite());
