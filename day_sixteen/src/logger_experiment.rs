@@ -16,6 +16,7 @@ fn print_sparsely(new_value: String) {
     }
 }
 
+// Sooo I guess why should actuall try Atomic values at some point ;)
 static LAST_DIGIT_VALUE: RwLock<usize> = std::sync::RwLock::new(usize::MAX);
 
 fn print_lower(new_value: usize) {
