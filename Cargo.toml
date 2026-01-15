@@ -8,7 +8,7 @@ members = [
     "day_fourteen",
     "day_nine",
     "day_one",
-    "day_seven",
+    "day_seven", "day_seventeen",
     "day_six", "day_sixteen",
     "day_ten",
     "day_thirteen",
@@ -25,7 +25,7 @@ serde_json = "1.0.133"
 thiserror = "2.0.3"
 anyhow = "1.0.93"
 regex = "1.11.1"
-winnow = "0.7.13"
+winnow = "0.7.14"
 rayon = "1.10.0"
 glam = "0.29.2"
 itertools = "0.13.0"

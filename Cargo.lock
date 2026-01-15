@@ -107,6 +107,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "day_seventeen"
+version = "0.1.0"
+dependencies = [
+ "winnow",
+]
+
+[[package]]
 name = "day_six"
 version = "0.1.0"
 dependencies = [
@@ -314,9 +321,9 @@ checksum = "adb9e6ca4f869e1180728b7950e35922a7fc6397f7b641499e8f3ef06e50dc83"
 
 [[package]]
 name = "winnow"
-version = "0.7.13"
+version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "21a0236b59786fed61e2a80582dd500fe61f18b5dca67a4a067d0bc9039339cf"
+checksum = "5a5364e9d77fcdeeaa6062ced926ee3381faa2ee02d3eb83a5c27a8825540829"
 dependencies = [
  "memchr",
 ]
