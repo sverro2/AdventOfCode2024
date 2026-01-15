@@ -60,7 +60,7 @@ fn part1_compute(mut state: ComputerState, output_buffer: &mut Vec<U3>) {
 
 fn division_instruction(state: &ComputerState) -> u32 {
     let numerator = state.reg_a;
-    let denominator = 2_u32.pow(combo_operand_value(&state));
+    let denominator = 2_u32.pow(combo_operand_value(state));
     numerator / denominator
 }
 
