@@ -11,6 +11,7 @@ pub struct ComputerState {
 
 #[repr(u8)]
 #[derive(Debug)]
+#[allow(dead_code)]
 pub enum Instruction {
     ADV,
     BXL,
@@ -30,6 +31,7 @@ impl From<U3> for Instruction {
 }
 
 #[repr(u8)]
+#[allow(dead_code)]
 pub enum ComboOperand {
     Literal0,
     Literal1,
