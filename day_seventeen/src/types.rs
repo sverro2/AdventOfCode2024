@@ -13,14 +13,14 @@ pub struct ComputerState {
 #[derive(Debug)]
 #[allow(dead_code)]
 pub enum Instruction {
-    ADV,
-    BXL,
-    BST,
-    JNZ,
-    BXC,
-    OUT,
-    BDV,
-    CDV,
+    Adv,
+    Bxl,
+    Bst,
+    Jnz,
+    Bxc,
+    Out,
+    Bdv,
+    Cdv,
 }
 
 impl From<U3> for Instruction {

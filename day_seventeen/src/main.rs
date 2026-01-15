@@ -29,23 +29,23 @@ fn part1_compute(mut state: ComputerState, output_buffer: &mut Vec<U3>) {
     let mut jumped = false;
 
     match instruction {
-        Instruction::ADV => state.reg_a = division_instruction(&state),
-        Instruction::BXL => {
+        Instruction::Adv => state.reg_a = division_instruction(&state),
+        Instruction::Bxl => {
             state.reg_b = state
                 .reg_b
                 .bitxor(literal_operand_value(&state).get() as u32)
         }
-        Instruction::BST => state.reg_b = combo_operand_value(&state) % 8,
-        Instruction::JNZ => {
+        Instruction::Bst => state.reg_b = combo_operand_value(&state) % 8,
+        Instruction::Jnz => {
             if state.reg_a != 0 {
                 jumped = true;
                 state.instruction_pointer = literal_operand_value(&state).get() as usize;
             }
         }
-        Instruction::BXC => state.reg_b = state.reg_b.bitxor(state.reg_c),
-        Instruction::OUT => output_buffer.push(U3::new(combo_operand_value(&state) % 8).unwrap()),
-        Instruction::BDV => state.reg_b = division_instruction(&state),
-        Instruction::CDV => state.reg_c = division_instruction(&state),
+        Instruction::Bxc => state.reg_b = state.reg_b.bitxor(state.reg_c),
+        Instruction::Out => output_buffer.push(U3::new(combo_operand_value(&state) % 8).unwrap()),
+        Instruction::Bdv => state.reg_b = division_instruction(&state),
+        Instruction::Cdv => state.reg_c = division_instruction(&state),
     }
 
     if !jumped {
