@@ -8,7 +8,7 @@ use winnow::token::literal;
 use crate::ComputerState;
 use crate::u3::U3;
 
-fn register<'a>(name: &'static str) -> impl Parser<&'a str, u32, ContextError> {
+fn register<'a>(name: &'static str) -> impl Parser<&'a str, u64, ContextError> {
     preceded(
         (literal("Register "), literal(name), literal(": ")),
         dec_uint,

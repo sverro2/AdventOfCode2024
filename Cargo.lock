@@ -110,6 +110,7 @@ dependencies = [
 name = "day_seventeen"
 version = "0.1.0"
 dependencies = [
+ "rayon",
  "winnow",
 ]
 

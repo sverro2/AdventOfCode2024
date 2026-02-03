@@ -1,6 +1,6 @@
 use std::{borrow::Borrow, fmt::Display};
 
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
 pub struct U3(u8);
 
 impl Display for U3 {

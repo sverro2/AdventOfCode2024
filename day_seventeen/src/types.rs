@@ -1,10 +1,10 @@
 use crate::u3::U3;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct ComputerState {
-    pub reg_a: u32,
-    pub reg_b: u32,
-    pub reg_c: u32,
+    pub reg_a: u64,
+    pub reg_b: u64,
+    pub reg_c: u64,
     pub instruction_pointer: usize,
     pub operations: Vec<U3>,
 }
