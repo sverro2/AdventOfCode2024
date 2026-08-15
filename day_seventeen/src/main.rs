@@ -1,4 +1,3 @@
-use rayon::prelude::*;
 use std::ops::BitXor;
 
 use crate::{
@@ -61,41 +60,60 @@ fn part1_compute(mut state: ComputerState, output_buffer: &mut Vec<U3>) {
 }
 
 fn part2(start_state: ComputerState) {
-    let expected_output = start_state.operations.to_owned();
-
-    let solution = (2u64.pow(45)..2u64.pow(48) - 1)
-        .into_par_iter()
-        .filter_map(|reg_a| {
-            // Create new state to test in this iteration
-            let mut state = ComputerState {
-                reg_a,
-                ..start_state.to_owned()
-            };
-
-            // Create new output buffer for this iteration
-            let mut output = vec![];
-
-            while state.instruction_pointer < state.operations.len() {
-                part2_compute(&mut state, &mut output);
-
-                let max_output_index = output.len() - 1;
-
-                // Short circuit if latest addition isn't same as expected value
-                if expected_output.get(max_output_index) != output.get(max_output_index) {
-                    break;
-                }
-            }
-
-            if output.len() == expected_output.len() && output.last() == expected_output.last() {
-                Some(reg_a)
-            } else {
-                None
-            }
-        })
-        .take_any(1)
-        .min();
+    let operation_count = start_state.operations.len();
+    let solution = lowest_quine_seed(&start_state, 0, operation_count);
 
     println!("Reached expected output at {:?}", solution);
+}
+
+/// One loop of the program consumes the lowest 3 bits of A and emits a single
+/// value, so the last emitted value only depends on the highest 3 bits of A.
+/// That lets us fix A three bits at a time, working from the back of the program
+/// towards the front, and only keeping the prefixes whose run already reproduces
+/// the tail of the program. A prefix can still turn out to be a dead end later
+/// (`cdv B` peeks at bits above the current window), hence the backtracking.
+///
+/// `reg_a` is the value fixed so far, `tail_start` the index in `operations` from
+/// which the program still has to be reproduced.
+fn lowest_quine_seed(start_state: &ComputerState, reg_a: u64, tail_start: usize) -> Option<u64> {
+    if tail_start == 0 {
+        return Some(reg_a);
+    }
+
+    let expected_output = &start_state.operations[tail_start - 1..];
+
+    // Ascending, so the first solution we complete is also the lowest one
+    for next_bits in 0..8 {
+        let candidate = reg_a * 8 + next_bits;
+
+        // A of 0 halts immediately, it can never be part of a solution
+        if candidate == 0 {
+            continue;
+        }
+
+        if run_program(start_state, candidate) == expected_output
+            && let Some(solution) = lowest_quine_seed(start_state, candidate, tail_start - 1)
+        {
+            return Some(solution);
+        }
+    }
+
+    None
+}
+
+fn run_program(start_state: &ComputerState, reg_a: u64) -> Vec<U3> {
+    let mut state = ComputerState {
+        reg_a,
+        instruction_pointer: 0,
+        ..start_state.to_owned()
+    };
+    let mut output = vec![];
+
+    while state.instruction_pointer < state.operations.len() {
+        part2_compute(&mut state, &mut output);
+    }
+
+    output
 }
 
 fn part2_compute(state: &mut ComputerState, output_buffer: &mut Vec<U3>) {
